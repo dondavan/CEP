@@ -1,0 +1,28 @@
+{
+    "zabbix_environment": "PRD",
+    "event_url": "https://zabixurl",
+    "zabbix_action": "create",
+    "zabbix_site": "OLT",
+    "host_in_maintenance": false,
+    "trigger_id": 166222,
+    "trigger_name": "Zabbix agent on CEEOLT131 compute-52-2 is unreachable for 3 minutes",
+    "trigger_description": "Help in knowledge database at:",
+    "event_nseverity": 4,
+    "event_id": 14946800,
+    "event_update_message": "",
+    "event_update_action": "",
+    "event_tags": [
+      {
+        "tag": "Autobots",
+        "value": "TCIOPS-3846"
+      },
+      {
+        "tag": "Team",
+        "value": "Pace"
+      },
+      {
+        "tag": "Trigger_ID",
+        "value": "166222"
+      }
+    ]
+}

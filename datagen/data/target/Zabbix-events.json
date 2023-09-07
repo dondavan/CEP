@@ -1,0 +1,24 @@
+{
+    "event_url": "exampleURL",
+    "zabbix_environment": "site-aaa",
+    "zabbix_site": "bbb",
+    "zabbix_action": "close",
+    "host_in_maintenance": false,
+    "host_name": "41FW0",
+    "host_ip": "123.123.128.234",
+    "trigger_id": 86472,
+    "trigger_name": " is Unavailable by ICMPping",
+    "trigger_description": "",
+    "event_id": 30210041,
+    "event_tags": {
+      "TRIGGER": "NodeDown",
+      "VNF-Type": "vesbc"
+    },
+    "event_datetime": "2023-02-19T08:14:44Z",
+    "event_nseverity": 5,
+    "event_update_datetime": "",
+    "event_update_message": "",
+    "event_update_action": "",
+    "event_recovery_datetime": "2023-02-19T09:09:44Z",
+    "action_datetime": "2023-02-19T09:09:44Z"
+  }
