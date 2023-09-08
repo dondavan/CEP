@@ -1,5 +1,5 @@
 {
-    "zabbix-action": ["create", "close"],
+    "zabbix_action": ["create", "close"],
     "trigger_name": ["is Unavailable by ICMPping", "Zabbix agent on%compute%"],
     "event_datetime": "RAND_TIME_ISO8601"
 }
