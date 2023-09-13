@@ -1,30 +1,44 @@
-import pandas as pd
 import json
 from faker import Faker
 from faker.providers import DynamicProvider
+import os.path
+import argparse
+
+# CLi tool
+parser = argparse.ArgumentParser(description='Mimic data generator')
+parser.parse_args()
 
 # These will be later ported to cli tool
 target_files = ['nqa-raw','TCI','Zabbix-events']
 amount = 3
+target_directory = '../data/target/'
+output_directory = '../data/output/'
 # Map Json field value to faker provider name
 JSON_FAKER_NAME = {'RAND_TIME_MILLI':'unix_time', 'RAND_TIME_ISO8601':'iso8601'}
 
 
 # Check if target file and field file exists
-#TBA
+for file in target_files:
+    if(not os.path.isfile(f'{target_directory}{file}.json')):
+        print(f"Mimic target json file does not exist: {target_directory}{file}.json")
+        exit(1)
+
+    if(not os.path.isfile(f'{target_directory}{file}.json')):
+        print(f"Filed value json file does not exist: {target_directory}{file}_field.json\n * File name needs to be {file}_field.json")
+        exit(1)
 
 
-# Read json target file from '../data/target/'
+# Read json target file
 targets_data = []
 fields_data  = []
 try:
     for target in target_files:
-        file = open(f'../data/target/{target}.json')
+        file = open(f'{target_directory}{target}.json')
         data = json.load(file)
         targets_data.append(data)
         file.close
     for target in target_files:
-        file = open(f'../data/target/{target}_field.json')
+        file = open(f'{target_directory}{target}_field.json')
         data = json.load(file)
         fields_data.append(data)
         file.close
@@ -80,7 +94,7 @@ for i in range(len(targets_data)):
     output_dict = {f'{target_files[i]}_generated':output_list}        
     # write to output file
     try:
-        output_file = open(f'../data/output/{target_files[i]}.json', 'w')
+        output_file = open(f'{output_directory}{target_files[i]}.json', 'w')
         json.dump(output_dict, output_file, ensure_ascii=False)
         output_file.close()
     except Exception as err:    

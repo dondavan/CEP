@@ -33,3 +33,4 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
 * Format of `event_tags` and `RAND_TIME_ISO8601` needs rework
 * Add a wrapper cli tool and shell script to configure and run 
 * More reasonable value
+* Relative directory while running script
