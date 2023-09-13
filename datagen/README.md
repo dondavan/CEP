@@ -6,6 +6,9 @@ This is an data generator implemented using faker.
 
 
 ## Usage
+Run sample:
+``
+
 Provide paired JSON file under `./data/output/`:
 Format JSON file `XXX.json`, relevant updating field value `XXX_field.json` ( `_field` will be used to search for file).
 

@@ -4,15 +4,20 @@ from faker.providers import DynamicProvider
 import os.path
 import argparse
 
-# CLi tool
+# CLi tool get argument
 parser = argparse.ArgumentParser(description='Mimic data generator')
-parser.parse_args()
+parser.add_argument('-t', '--target', help="Specify target file directory", required= False, type=str, default="../data/target/")
+parser.add_argument('-o', '--output', help="Specify output directory", required= False, type=str, default="../data/output/")
+parser.add_argument('-a', '--amount', help="How much data will be generated", required= False, type=int, default=1)
+parser.add_argument('-f', '--file', help="Target file name", required= False, type=list, default=['nqa-raw','TCI','Zabbix-events'])
 
-# These will be later ported to cli tool
-target_files = ['nqa-raw','TCI','Zabbix-events']
-amount = 3
-target_directory = '../data/target/'
-output_directory = '../data/output/'
+argument = parser.parse_args()
+
+target_files = argument.file
+amount = argument.amount
+target_directory = argument.target
+output_directory = argument.output
+
 # Map Json field value to faker provider name
 JSON_FAKER_NAME = {'RAND_TIME_MILLI':'unix_time', 'RAND_TIME_ISO8601':'iso8601'}
 
