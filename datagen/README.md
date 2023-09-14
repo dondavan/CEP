@@ -37,3 +37,4 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
 * Add a wrapper cli tool and shell script to configure and run 
 * More reasonable value
 * Relative directory while running script
+* Go to kafka
