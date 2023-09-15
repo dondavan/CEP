@@ -30,7 +30,7 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
 ## Compatibility
 * Python: 3.9.6
 * Faker : 19.4.0, faker requires python 3.7 and above
-* Pandas: 2.1.0
+* Kafka : confluent_kafka, jsonschema, requests
 
 ## TBA
 * Format of `event_tags` and `RAND_TIME_ISO8601` needs rework
@@ -38,3 +38,5 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
 * More reasonable value
 * Relative directory while running script
 * Go to kafka
+    - Configure data schema
+    - Add DAO object for data schema object

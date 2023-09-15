@@ -6,8 +6,8 @@ import argparse
 
 # CLi tool get argument
 parser = argparse.ArgumentParser(description='Mimic data generator')
-parser.add_argument('-t', '--target', help="Specify target file directory", required= False, type=str, default="../data/target/")
-parser.add_argument('-o', '--output', help="Specify output directory", required= False, type=str, default="../data/output/")
+parser.add_argument('-td', '--target_dir', help="Specify target file directory", required= False, type=str, default="../data/target/")
+parser.add_argument('-od', '--output_dir', help="Specify output directory", required= False, type=str, default="../data/output/")
 parser.add_argument('-a', '--amount', help="How much data will be generated", required= False, type=int, default=1)
 parser.add_argument('-f', '--file', help="Target file name", required= False, type=list, default=['nqa-raw','TCI','Zabbix-events'])
 
