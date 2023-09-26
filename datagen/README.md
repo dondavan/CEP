@@ -34,9 +34,10 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
 
 ## TBA
 * Format of `event_tags` and `RAND_TIME_ISO8601` needs rework
-* Add a wrapper cli tool and shell script to configure and run 
 * More reasonable value
 * Relative directory while running script
 * Go to kafka
     - Configure data schema
     - Add DAO object for data schema object
+    - Add logging (needed in kafka_consumer.py)
+* Automatic generate data and produce to topic

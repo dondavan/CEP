@@ -3,14 +3,20 @@
 import sys
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
-from confluent_kafka import Consumer, OFFSET_BEGINNING
+from confluent_kafka import Consumer, OFFSET_BEGINNING, KafkaError
+from confluent_kafka.serialization import StringDeserializer
+from confluent_kafka.schema_registry.json_schema import JSONDeserializer
+from typing import Optional, Generator
 
-if __name__ == '__main__':
-    # Parse the command line.
-    parser = ArgumentParser()
-    parser.add_argument('config_file', type=FileType('r'))
-    parser.add_argument('--reset', action='store_true')
-    args = parser.parse_args()
+# Parse the command line.
+parser = ArgumentParser()
+parser.add_argument('-c', '--config_file', type=FileType('r'), required= False, default="./kafka_config.ini")
+parser.add_argument('-to', '--time_out', help="How long will the consumer poll for message", required= False, type=int, default=1000)
+parser.add_argument('--reset', action='store_true')
+args = parser.parse_args()
+
+
+class kafaka_consumer:
 
     # Parse the configuration.
     # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
@@ -18,6 +24,8 @@ if __name__ == '__main__':
     config_parser.read_file(args.config_file)
     config = dict(config_parser['default'])
     config.update(config_parser['consumer'])
+
+    POLL_TIMEOUT_S = args.time_out
 
     # Create Consumer instance
     consumer = Consumer(config)
@@ -33,24 +41,64 @@ if __name__ == '__main__':
     topic = "event_test"
     consumer.subscribe([topic], on_assign=reset_offset)
 
-    # Poll for new messages from Kafka and print them.
-    try:
-        while True:
-            msg = consumer.poll(1.0)
-            if msg is None:
-                # Initial message consumption may take up to
-                # `session.timeout.ms` for the consumer group to
-                # rebalance and start consuming
-                print("Waiting...")
-            elif msg.error():
-                print("ERROR: %s".format(msg.error()))
-            else:
-                # Extract the (optional) key and value, and print.
+    # Fancy Version of polling for new messages from Kafka and print them.
+    def poll_message(self) -> Optional[tuple[Optional[str], Optional[dict]]]:
+        msg = self.consumer.poll(self.POLL_TIMEOUT_S)
+        self._error_counter = 0
+        if msg is None:
+            return
+        elif msg.error():
+            err = msg.error()
+            if err.code() in [KafkaError.TOPIC_AUTHORIZATION_FAILED, KafkaError.CLUSTER_AUTHORIZATION_FAILED,
+                            KafkaError.GROUP_AUTHORIZATION_FAILED, KafkaError.SASL_AUTHENTICATION_FAILED]:
+                raise RuntimeError(f"Kafka Authentication Error: {err}")
+            # Logging TBA
+            #logging.exception(f"Consumer error: {err}") 
+            return
+        else:
+            record_key = StringDeserializer(msg.key())
+            record_value = StringDeserializer(msg.value())
+            return record_key, record_value
 
-                print("Consumed event from topic {topic}: key = {key:12} value = {value:12}".format(
-                    topic=msg.topic(), key=msg.key().decode('utf-8'), value=msg.value().decode('utf-8')))
-    except KeyboardInterrupt:
-        pass
-    finally:
-        # Leave group and commit final offsets
-        consumer.close()
+    # Fancy version of consuming message
+    def consume(self) -> Generator[tuple[Optional[str], Optional[dict]], None, None]:
+        try:
+            while True:
+                record = self.poll_message()
+
+                if record is None:
+                    continue
+
+                yield record  # yield is like return, but returns a generator instead.
+        except KeyboardInterrupt:
+            pass
+        finally:
+            # Leave group and commit final offsets
+            self.consumer.close()
+
+consumer_instance = kafaka_consumer()
+for key, value in consumer_instance.consume():
+    print(value)
+
+# Poll for new messages from Kafka and print them.
+'''
+try:
+    while True:
+        msg = consumer.poll(1.0)
+        if msg is None:
+            # Initial message consumption may take up to
+            # `session.timeout.ms` for the consumer group to
+            # rebalance and start consuming
+            print("Waiting...")
+        elif msg.error():
+            print("ERROR: %s".format(msg.error()))
+        else:
+            # Extract the (optional) key and value, and print.
+            print("Consumed event from topic {topic}:".format(
+                topic=msg.topic()))
+except KeyboardInterrupt:
+    pass
+finally:
+    # Leave group and commit final offsets
+    consumer.close()
+    '''
