@@ -34,10 +34,11 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
 
 ## TBA
 * Format of `event_tags` and `RAND_TIME_ISO8601` needs rework
-* More reasonable value
+* More reasonable value, generate time stamp field in a given time period
 * Relative directory while running script
 * Go to kafka
     - Configure data schema
     - Add DAO object for data schema object
     - Add logging (needed in kafka_consumer.py)
 * Automatic generate data and produce to topic
+* Maybe restructure the way sending event, currently is sequently sending event into topic (needed in kafka_producer.py)

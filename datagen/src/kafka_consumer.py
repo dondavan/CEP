@@ -3,6 +3,8 @@
 import sys
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
+import logging
+
 from confluent_kafka import Consumer, OFFSET_BEGINNING, KafkaError
 from confluent_kafka.serialization import StringDeserializer
 from confluent_kafka.schema_registry.json_schema import JSONDeserializer
@@ -29,6 +31,7 @@ class kafaka_consumer:
 
     # Create Consumer instance
     consumer = Consumer(config)
+    deserialize_string = StringDeserializer()
 
     # Set up a callback to handle the '--reset' flag.
     def reset_offset(consumer, partitions):
@@ -41,6 +44,10 @@ class kafaka_consumer:
     topic = "event_test"
     consumer.subscribe([topic], on_assign=reset_offset)
 
+    # Write into log
+    logging.basicConfig(filename='./log/consumer.log', encoding='utf-8', level=logging.DEBUG)
+
+
     # Fancy Version of polling for new messages from Kafka and print them.
     def poll_message(self) -> Optional[tuple[Optional[str], Optional[dict]]]:
         msg = self.consumer.poll(self.POLL_TIMEOUT_S)
@@ -52,12 +59,11 @@ class kafaka_consumer:
             if err.code() in [KafkaError.TOPIC_AUTHORIZATION_FAILED, KafkaError.CLUSTER_AUTHORIZATION_FAILED,
                             KafkaError.GROUP_AUTHORIZATION_FAILED, KafkaError.SASL_AUTHENTICATION_FAILED]:
                 raise RuntimeError(f"Kafka Authentication Error: {err}")
-            # Logging TBA
-            #logging.exception(f"Consumer error: {err}") 
+            logging.error(f"Consumer error: {err}") 
             return
         else:
-            record_key = StringDeserializer(msg.key())
-            record_value = StringDeserializer(msg.value())
+            record_key = self.deserialize_string(msg.key())
+            record_value = self.deserialize_string(msg.value())
             return record_key, record_value
 
     # Fancy version of consuming message
@@ -78,7 +84,7 @@ class kafaka_consumer:
 
 consumer_instance = kafaka_consumer()
 for key, value in consumer_instance.consume():
-    print(value)
+    logging.debug(value)
 
 # Poll for new messages from Kafka and print them.
 '''

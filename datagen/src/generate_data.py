@@ -15,8 +15,8 @@ argument = parser.parse_args()
 
 target_files = argument.file
 amount = argument.amount
-target_directory = argument.target
-output_directory = argument.output
+target_directory = argument.target_dir
+output_directory = argument.output_dir
 
 # Map Json field value to faker provider name
 JSON_FAKER_NAME = {'RAND_TIME_MILLI':'unix_time', 'RAND_TIME_ISO8601':'iso8601'}

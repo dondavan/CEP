@@ -2,6 +2,7 @@ import os.path
 import json
 from argparse import ArgumentParser, FileType
 from uuid import uuid4
+import logging
 
 from configparser import ConfigParser
 from confluent_kafka import Producer
@@ -48,14 +49,17 @@ class kafka_producer:
     producer = Producer(config) # Create producer
     topic = "event_test"        # Topic to be written into
 
+    # Write into log
+    logging.basicConfig(filename='./log/producer.log', encoding='utf-8', level=logging.DEBUG)
+
     # Optional per-message delivery callback (triggered by poll() or flush())
     # when a message has been successfully delivered or permanently
     # failed delivery (after retries).
     def delivery_callback(self, err, msg):
         if err:
-            print('ERROR: Message failed delivery: {}'.format(err))
+            logging.error('ERROR: Message failed delivery: {}'.format(err))
         else:
-            print("Produced event to topic {topic}:  key = {key:12}, value = {value:12}".format(
+            logging.debug("Produced event to topic {topic}:  key = {key:12}, value = {value:12}".format(
                 topic=msg.topic(), key=msg.key().decode('utf-8'),  value=msg.value().decode('utf-8')))
 
 
@@ -63,11 +67,11 @@ class kafka_producer:
         # Check if target file and field file exists
         for file in self.input_files:
             if(not os.path.isfile(f'{self.input_directory}{file}.json')):
-                print(f"Mimic target json file does not exist: {self.input_directory}{file}.json")
+                logging.error(f"Mimic target json file does not exist: {self.input_directory}{file}.json")
                 exit(1)
 
             if(not os.path.isfile(f'{self.input_directory}{file}.json')):
-                print(f"Filed value json file does not exist: {self.input_directory}{file}_field.json\n * File name needs to be {file}_field.json")
+                logging.error(f"Filed value json file does not exist: {self.input_directory}{file}_field.json\n * File name needs to be {file}_field.json")
                 exit(1)
 
 
@@ -80,17 +84,18 @@ class kafka_producer:
                 json_file.append(data)
                 file.close
         except Exception as err:    
-            print(f'Something is wrong during opening JSON file: {err}')
+            logging.error(f'Something is wrong during opening JSON file: {err}')
 
 
         # Producer produce event
         # Value string is encoded in utf-8
         for file in json_file:
-            for value in file.values():
-                json_str = json.dumps(value)
-                serialized_key  = self.string_serializer(self.key)
-                serialized_value  = self.string_serializer(json_str)
-                self.producer.produce(self.topic, key = serialized_key, value = serialized_value, callback = self.delivery_callback)
+            for values in file.values():
+                for value in values:
+                    json_str = json.dumps(value)
+                    serialized_key  = self.string_serializer(self.key)
+                    serialized_value  = self.string_serializer(json_str)
+                    self.producer.produce(self.topic, key = serialized_key, value = serialized_value, callback = self.delivery_callback)
 
         # Block until the messages are sent.
         self.producer.poll(10000)
