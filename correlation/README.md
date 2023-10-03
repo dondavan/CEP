@@ -11,10 +11,10 @@ It uses docker image to compose service, described in `./ksql/docker-compose.yam
 * ksqldb-cli
 
 ### Usage:
-Compose and start ksqldb:
-> Go to ksql directory: `cd ksql` \
-> Compose and start ksqldb-server: `sh run_ksqldb.sh` \
-Connect to ksql cli:
-> Execute in shell: `docker exec -it ksqldb-cli ksql http://ksqldb-server:8088`\
+Compose and start ksqldb:\
+Go to ksql directory: `cd ksql` \
+Compose and start ksqldb-server: `sh run_ksqldb.sh` \
+Connect to ksql cli:\
+Execute in shell: `docker exec -it ksqldb-cli ksql http://ksqldb-server:8088`\
 
 ## TBA:
