@@ -18,7 +18,7 @@ parser.add_argument('--reset', action='store_true')
 args = parser.parse_args()
 
 
-class kafaka_consumer:
+class kafka_consumer:
 
     # Parse the configuration.
     # See https://github.com/edenhill/librdkafka/blob/master/CONFIGURATION.md
