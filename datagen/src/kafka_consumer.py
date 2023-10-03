@@ -82,7 +82,7 @@ class kafka_consumer:
             # Leave group and commit final offsets
             self.consumer.close()
 
-consumer_instance = kafaka_consumer()
+consumer_instance = kafka_consumer()
 for key, value in consumer_instance.consume():
     logging.debug(value)
 
