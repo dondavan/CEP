@@ -1,30 +1,76 @@
 class Zabbix_events_dao(object):
     
-    schema_str = """{
-    "$id": "http://example.com/myURI.schema.json",
-    "$schema": "http://json-schema.org/draft-07/schema#",
-    "additionalProperties": false,
-    "description": "Sample schema to help you get started.",
-    "properties": {
-        "myField1": {
-        "description": "The integer type is used for integral numbers.",
-        "type": "integer"
+    schema_str = """
+    {
+        "$id": "http://example.com/myURI.schema.json",
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false,
+        "description": "JSON schema for zabbix events.",
+        "properties": {
+            "action_datetime": {
+            "type": "string"
+            },
+            "event_datetime": {
+            "type": "string"
+            },
+            "event_id": {
+            "type": "integer"
+            },
+            "event_nseverity": {
+            "type": "integer"
+            },
+            "event_recovery_datetime": {
+            "type": "string"
+            },
+            "event_tags": {
+            "TRIGGER": {
+                "type": "string"
+            },
+            "VNF-Type": {
+                "type": "string"
+            }
+            },
+            "event_update_action": {
+            "type": "string"
+            },
+            "event_update_datetime": {
+            "type": "string"
+            },
+            "event_update_message": {
+            "type": "string"
+            },
+            "event_url": {
+            "type": "string"
+            },
+            "host_in_maintenance": {
+            "type": "boolean"
+            },
+            "host_ip": {
+            "type": "string"
+            },
+            "host_name": {
+            "type": "string"
+            },
+            "trigger_description": {
+            "type": "string"
+            },
+            "trigger_id": {
+            "type": "integer"
+            },
+            "trigger_name": {
+            "type": "string"
+            },
+            "zabbix_action": {
+            "type": "string"
+            },
+            "zabbix_environment": {
+            "type": "string"
+            },
+            "zabbix_site": {
+            "type": "string"
+            }
         },
-        "myField2": {
-        "description": "The number type is used for any numeric type, either integers or floating point numbers.",
-        "type": "number"
-        },
-        "myField3": {
-        "description": "The string type is used for strings of text.",
-        "type": "string"
+        "title": "Zabbix_events_schema",
+        "type": "object"
         }
-    },
-    "title": "SampleRecord",
-    "type": "object"
-    }"""
-
-    def __init__(self, name, address, favorite_number, favorite_color):
-        self.name = name
-        self.favorite_number = favorite_number
-        self.favorite_color = favorite_color
-        self._address = address
+    """

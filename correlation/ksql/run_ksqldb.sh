@@ -1,1 +1,1 @@
-docker-compose up
+docker container start /ksql
