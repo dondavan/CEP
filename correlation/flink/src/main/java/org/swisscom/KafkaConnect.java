@@ -1,5 +1,7 @@
 package org.swisscom;
 
+import org.apache.kafka.clients.consumer.*;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Properties;
@@ -16,6 +18,10 @@ public class KafkaConnect {
             propsInput = new FileInputStream(configFilePath);
             prop = new Properties();
             prop.load(propsInput);
+            /* Additional Configuration */
+            prop.put(ConsumerConfig.GROUP_ID_CONFIG, "kafka_test");
+            prop.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
