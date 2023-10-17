@@ -12,11 +12,11 @@ public class Consumer {
 
     private Properties pros = new Properties();
     /* List of topic subscribed to  */
-    private  final Collection<String> topics = new ArrayList<String>(Arrays.asList("Zabbix_events","TCI","nqa_raw"));
+    private Collection<String> topics;
 
-    public Consumer(Properties pros){
+    public Consumer(Properties pros,Collection<String> topics){
         this.pros = pros;
-        System.out.println(this.pros);
+        this.topics = topics;
     }
 
     public void pollConsume(){
