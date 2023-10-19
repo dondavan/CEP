@@ -1,6 +1,6 @@
 package org.swisscom;
 
-import org.apache.kafka.clients.consumer.*;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 
-public class KafkaConnect {
+public class FlinkKafkaConnect {
 
     public static void main(String[] args) {
 
@@ -35,10 +35,9 @@ public class KafkaConnect {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
-        System.out.println(prop);
 
-        Consumer consumer = new Consumer(prop,topics);
-        consumer.pollConsume();
+        FlinkKafkaSource flinkSource = new FlinkKafkaSource(prop,topics,groupID);
+        flinkSource.createKafkaSource();
 
     }
 
