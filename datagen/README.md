@@ -42,3 +42,6 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
     - Add logging (needed in kafka_consumer.py)
 * Automatic generate data and produce to topic
 * Maybe restructure the way sending event, currently is sequently sending event into topic (needed in kafka_producer.py)
+
+* Count create, close event filter
+* 
