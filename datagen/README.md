@@ -40,6 +40,6 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
     - Configure data schema
     - Add DAO object for data schema object
 * Maybe restructure the way sending event, currently is sequently sending event into topic (needed in kafka_producer.py)
-* Set up different topic for different event stream
-* Timestamp of original is "X" current is "Z"
-* Change emit final to changes
+
+* Count create, close event filter
+* 

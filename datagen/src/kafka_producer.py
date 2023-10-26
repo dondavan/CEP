@@ -16,7 +16,7 @@ from DAO.nqa_raw_dao import nqa_raw_dao
 
 # Parse the command line.
 parser = ArgumentParser()
-parser.add_argument('-c', '--config_file', type=FileType('r'), required= False, default="./kafka_config.ini")
+parser.add_argument('-c', '--config_file', type=FileType('r'), required= False, default="./kafka_config_local.ini")
 parser.add_argument('-kk', '--kafka_key', help="Kafka Key", type=str, required= False, default="test")
 parser.add_argument('-id', '--input_dir', help="Generated json file directory", required= False, type=str, default="../data/output/")
 parser.add_argument('-f', '--file', help="Name of json file to be written into topic", required= False, type=list, default=['Zabbix_events', 'TCI', 'nqa_raw'])
