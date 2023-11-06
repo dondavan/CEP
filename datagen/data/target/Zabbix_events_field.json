@@ -1,6 +1,6 @@
 {
     "zabbix_action": ["create", "close"],
     "trigger_name": ["%Unavailable by ICMPping%", "Unavailable by ZabbixProxyPortCheck", "Internet NQA Target not reachable from%"],
-    "event_tags" : [{"TRIGGER":"NodeDown"}, {"VNF-Type":"hevpe"}, {"VNF-Type":"vfw-mgmt"}],
+    "event_tags" : [{"TRIGGER":"NodeDown","VNF-Type":"hevpe"}, {"TRIGGER":"NodeDown","VNF-Type":"vfw-mgmt"}],
     "action_datetime": "RAND_TIME_ISO8601"
 }
