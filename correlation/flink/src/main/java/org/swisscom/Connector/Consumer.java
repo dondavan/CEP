@@ -1,4 +1,4 @@
-package org.swisscom;
+package org.swisscom.Connector;
 
 import org.apache.kafka.clients.consumer.*;
 

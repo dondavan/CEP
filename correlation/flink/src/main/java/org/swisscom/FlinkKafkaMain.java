@@ -1,6 +1,7 @@
 package org.swisscom;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.swisscom.Connector.FlinkKafkaConnect;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,7 +10,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
 
-public class FlinkKafkaConnect_local {
+/*
+ *    This is the entry point for flink event correlation
+ *    Read in kafka configuration and fire up connector to kafka
+ * */
+public class FlinkKafkaMain {
 
     public static void main(String[] args) {
 
@@ -20,7 +25,7 @@ public class FlinkKafkaConnect_local {
         String groupID = "Test-group";
 
         /* Reads in configuration property and phase it*/
-        String configFilePath = "src/main/resources/conf/kafka_local.properties";
+        String configFilePath = "src/main/resources/conf/kafka.properties";
 
         FileInputStream propsInput = null;
         Properties prop;
@@ -36,7 +41,7 @@ public class FlinkKafkaConnect_local {
             throw new RuntimeException(ex);
         }
 
-        FlinkKafkaSource_local flinkSource = new FlinkKafkaSource_local(prop,topics,groupID);
+        FlinkKafkaConnect flinkSource = new FlinkKafkaConnect(prop,topics,groupID);
         flinkSource.createKafkaSource();
 
     }
