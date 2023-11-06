@@ -1,4 +1,4 @@
-package org.swisscom;
+package org.swisscom.Connector;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -11,6 +11,8 @@ import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDe
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.swisscom.Processor.TestProcessor;
+
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -18,7 +20,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
-public class FlinkKafkaSource_local {
+public class FlinkKafkaConnect {
 
     private Properties pros = new Properties();
 
@@ -28,7 +30,7 @@ public class FlinkKafkaSource_local {
     /* Consumer group ID */
     String groupID = "Test-group";
 
-    public FlinkKafkaSource_local(Properties pros, Collection<String> topics, String groupID){
+    public FlinkKafkaConnect(Properties pros, Collection<String> topics, String groupID){
         this.pros = pros;
         this.topics = new ArrayList<String>(topics);
         this.groupID = groupID;
@@ -40,7 +42,10 @@ public class FlinkKafkaSource_local {
 
         /* Instantiate a KafkaSource Instance using builder class */
         KafkaSource<String> kafkaSource = KafkaSource.<String>builder()
-
+                /* Security configuration */
+                .setProperty("security.protocol", this.pros.getProperty("security.protocol"))
+                .setProperty("sasl.mechanism",  this.pros.getProperty("sasl.mechanism"))
+                .setProperty("sasl.jaas.config", this.pros.getProperty("sasl.jaas.config"))
 
                 /* Server Topic GroupID */
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
@@ -60,6 +65,11 @@ public class FlinkKafkaSource_local {
 
         /* Instantiate a sink for stream processing output*/
         KafkaSink<String> sink = KafkaSink.<String>builder()
+                /* Security configuration */
+                .setProperty("security.protocol", this.pros.getProperty("security.protocol"))
+                .setProperty("sasl.mechanism",  this.pros.getProperty("sasl.mechanism"))
+                .setProperty("sasl.jaas.config", this.pros.getProperty("sasl.jaas.config"))
+
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
 
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
@@ -75,7 +85,7 @@ public class FlinkKafkaSource_local {
         /* Execute data stream process*/
         try{
             env.execute("Test Kafka Flink");
-        }catch (Exception e){
+        }catch (java.lang.Exception e){
             System.out.println(e.getMessage());
         }
     }
