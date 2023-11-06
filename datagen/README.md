@@ -39,6 +39,15 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
 * Go to kafka
     - Configure data schema
     - Add DAO object for data schema object
+<<<<<<< HEAD
 * Maybe restructure the way sending event, currently is sequently sending event into topic (needed in kafka_producer.py)
 
 * Count create, close event filter
+=======
+    - Add logging (needed in kafka_consumer.py)
+* Automatic generate data and produce to topic
+* Maybe restructure the way sending event, currently is sequently sending event into topic (needed in kafka_producer.py)
+
+* Count create, close event filter
+* 
+>>>>>>> 296b9c69140ab5e711146f9d457bec3cbdcb0654
