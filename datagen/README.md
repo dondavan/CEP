@@ -42,4 +42,3 @@ A JSON file named the same as `XXX.json` with a JSON object inside:
 * Maybe restructure the way sending event, currently is sequently sending event into topic (needed in kafka_producer.py)
 
 * Count create, close event filter
-* 
