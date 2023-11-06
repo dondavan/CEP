@@ -3,6 +3,7 @@ from faker import Faker
 from faker.providers import DynamicProvider
 import os.path
 import argparse
+from datetime import datetime, timedelta, timezone
 
 # CLi tool get argument
 parser = argparse.ArgumentParser(description='Mimic data generator')
@@ -78,13 +79,32 @@ for i in range(len(targets_data)):
     for count in range(amount):
         new_dict = dict()
         for item_key in targets_data[i]:
+            # This will be generate by faker
             if(item_key in fields_data[i]):
-                # This will be generate by faker
                 if(item_key in faker_field):
-                    # Get provider name in faker
-                    faker_function_name = JSON_FAKER_NAME[fields_data[i][item_key]]
-                    func = getattr(fake,faker_function_name) 
-                    value = func()
+
+                    ################### APPLYING SEPECIAL RULES ###################
+                    
+                    # Generate timestamp within the past 5 min
+                    if(fields_data[i][item_key] == 'RAND_TIME_MILLI'):
+                        datetime_start =  datetime.now() - timedelta(minutes=5)
+                        value = fake.unix_time(start_datetime=datetime_start)
+                    
+                    # Generate timestamp within the past 5 min
+                    elif(fields_data[i][item_key] == 'RAND_TIME_ISO8601'):
+                        datetime_start =  datetime.now() - timedelta(minutes=5)
+                        generated_time = fake.date_time_between(start_date = datetime_start,end_date = datetime.now(), tzinfo=timezone.utc)
+                        # drop millisecond and change timezone representation into Z
+                        generated_time = generated_time.replace(microsecond=0)
+                        value = generated_time.isoformat().replace("+00:00", "Z")
+                        
+                    else:
+                        faker_function_name = JSON_FAKER_NAME[fields_data[i][item_key]]
+                        func = getattr(fake,faker_function_name) 
+                        value = func()
+
+                    ################### APPLYING SEPECIAL RULES ###################
+
                     new_dict[item_key] = value
                 # This will be generate through provided value
                 else:
@@ -92,8 +112,7 @@ for i in range(len(targets_data)):
                     value = func()
                     new_dict[item_key] = value
             else:
-                # This fields value stay original
-                new_dict[item_key] = targets_data[i][item_key]
+                new_dict[item_key] = targets_data[i][item_key] # This fields value stay original
         output_list.append(new_dict)
 
     output_dict = {f'{target_files[i]}_generated':output_list}        
