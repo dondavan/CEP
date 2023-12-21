@@ -9,8 +9,11 @@ import org.swisscom.POJOs.Zabbix_events_POJO;
 
 public class StreamFilteringProcessor extends ProcessFunction<TCI_POJO ,TCI_POJO > {
 
-    public void processElement(TCI_POJO s, ProcessFunction<TCI_POJO, TCI_POJO>.Context context, Collector<TCI_POJO> collector) throws Exception {
-        System.out.println(s);
+    public void processElement(TCI_POJO tci_pojo, ProcessFunction<TCI_POJO, TCI_POJO>.Context context, Collector<TCI_POJO> collector) throws Exception {
+        /*
+        * Event is reported every 5 minutes ?
+        * Do TCI and Zabbix share the same window start time and size? - This is for choosing flink window implementation like slide
+        * */
     }
 
 }

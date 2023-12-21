@@ -1,21 +1,22 @@
 package org.swisscom.Pipeline;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
-import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
 import org.apache.flink.formats.json.JsonDeserializationSchema;
 import org.apache.flink.formats.json.JsonSerializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.swisscom.POJOs.TCI_POJO;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
+import org.swisscom.POJOs.ServiceMonitoringOutput_POJO;
+import org.swisscom.POJOs.SitetoSiteFailure_POJO;
 import org.swisscom.POJOs.Zabbix_events_POJO;
 import org.swisscom.Processor.ServiceMonitoringProcessor;
+import org.swisscom.Processor.SitetoSiteFailureProcessor;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -46,9 +47,49 @@ public class ServiceMonitoring {
 
         /* Setup separate source and sink for different topic, for different deserializer, operator */
         for (String topic:topics) {
-            JsonDeserializationSchema<Zabbix_events_POJO> jsonFormatDe=new JsonDeserializationSchema<>(Zabbix_events_POJO.class);
-            JsonSerializationSchema<Zabbix_events_POJO> jsonFormatSe=new JsonSerializationSchema<>();
+            /*****************************************************************************************
 
+                                            Serialization Area
+
+             *****************************************************************************************/
+            /* Json Deserializer and Serializer for Data from Kafka Topic */
+            JsonDeserializationSchema<Zabbix_events_POJO> jsonFormatDe=new JsonDeserializationSchema<>(Zabbix_events_POJO.class);
+            JsonSerializationSchema<ServiceMonitoringOutput_POJO> ServiceMonitoring_JsonFormatSe=new JsonSerializationSchema<>();
+            JsonSerializationSchema<SitetoSiteFailure_POJO> SitetoSiteFailure_JsonFormatSe=new JsonSerializationSchema<>();
+
+
+            /*****************************************************************************************
+
+             Sink Area
+
+             *****************************************************************************************/
+            /* Instantiate a sink for ServiceMonitoring output*/
+            KafkaSink<ServiceMonitoringOutput_POJO> ServiceMonitoring_Sink = KafkaSink.<ServiceMonitoringOutput_POJO>builder()
+                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
+                            .setTopic("ServiceMonitoring_sink")
+                            .setValueSerializationSchema(ServiceMonitoring_JsonFormatSe)
+                            .build()
+                    )
+                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                    .build();
+
+            KafkaSink<SitetoSiteFailure_POJO> SitetoSiteFailure_Sink = KafkaSink.<SitetoSiteFailure_POJO>builder()
+                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
+                            .setTopic("ServiceMonitoring_sink")
+                            .setValueSerializationSchema(SitetoSiteFailure_JsonFormatSe)
+                            .build()
+                    )
+                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                    .build();
+
+
+            /*****************************************************************************************
+
+                                            Data Stream Area
+
+             *****************************************************************************************/
             /* Instantiate a KafkaSource Instance using builder class */
             KafkaSource<Zabbix_events_POJO> kafkaSource = KafkaSource.<Zabbix_events_POJO>builder()
 
@@ -65,22 +106,17 @@ public class ServiceMonitoring {
             /* Get a data stream from environment through added Kafka Source*/
             DataStream<Zabbix_events_POJO> kafkaStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)), topic+"_stream");
 
-            /* Transformation on data stream*/
-            kafkaStream.process(new ServiceMonitoringProcessor());
+            /* Create a data stream to process transformation*/
+            DataStream<ServiceMonitoringOutput_POJO> ServiceMonitoring_Stream =  kafkaStream.process(new ServiceMonitoringProcessor()).startNewChain();
+            ServiceMonitoring_Stream.sinkTo(ServiceMonitoring_Sink);
 
-            /* Instantiate a sink for stream processing output*/
-            KafkaSink<Zabbix_events_POJO> sink = KafkaSink.<Zabbix_events_POJO>builder()
-                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+            /* Create a Site to Site Failure transformation data stream */
+            DataStream<SitetoSiteFailure_POJO> SitetoSiteFailure_Stream = kafkaStream
+                                                                            .keyBy(value -> value.zabbix_environment)
+                                                                            .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+                                                                            .process(new SitetoSiteFailureProcessor());
 
-                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                            .setTopic(topic+"_stream")
-                            .setValueSerializationSchema(jsonFormatSe)
-                            .build()
-                    )
-                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
-                    .build();
-
-            kafkaStream.sinkTo(sink);
+            SitetoSiteFailure_Stream.sinkTo(SitetoSiteFailure_Sink);
 
         }
     }

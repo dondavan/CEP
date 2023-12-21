@@ -11,7 +11,6 @@ import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDe
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.swisscom.Processor.TestProcessor;
 
 
 import java.time.Duration;
@@ -60,8 +59,6 @@ public class FlinkKafkaConnect {
         /* Get a data stream from environment through added Kafka Source*/
         DataStream<String> kafkaStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)), "Test Kafka Flink");
 
-        /* Transformation on data stream*/
-        kafkaStream.process(new TestProcessor());
 
         /* Instantiate a sink for stream processing output*/
         KafkaSink<String> sink = KafkaSink.<String>builder()

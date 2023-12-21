@@ -12,6 +12,7 @@ from typing import Optional, Generator
 
 # Parse the command line.
 parser = ArgumentParser()
+parser.add_argument('-t', '--topics', help="Topic to be consumed from", required= False, type=str, default=['nqa_raw','TCI','Zabbix_events'])
 parser.add_argument('-c', '--config_file', type=FileType('r'), required= False, default="./kafka_config.ini")
 parser.add_argument('-to', '--time_out', help="How long will the consumer poll for message", required= False, type=int, default=1000)
 parser.add_argument('--reset', action='store_true')
@@ -41,7 +42,7 @@ class kafka_consumer:
             consumer.assign(partitions)
 
     # Subscribe to topic
-    topic = "event_test"
+    topic = args.topics
     consumer.subscribe([topic], on_assign=reset_offset)
 
     # Write into log
@@ -85,26 +86,3 @@ class kafka_consumer:
 consumer_instance = kafka_consumer()
 for key, value in consumer_instance.consume():
     logging.debug(value)
-
-# Poll for new messages from Kafka and print them.
-'''
-try:
-    while True:
-        msg = consumer.poll(1.0)
-        if msg is None:
-            # Initial message consumption may take up to
-            # `session.timeout.ms` for the consumer group to
-            # rebalance and start consuming
-            print("Waiting...")
-        elif msg.error():
-            print("ERROR: %s".format(msg.error()))
-        else:
-            # Extract the (optional) key and value, and print.
-            print("Consumed event from topic {topic}:".format(
-                topic=msg.topic()))
-except KeyboardInterrupt:
-    pass
-finally:
-    # Leave group and commit final offsets
-    consumer.close()
-    '''

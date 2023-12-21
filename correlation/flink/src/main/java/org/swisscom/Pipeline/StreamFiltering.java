@@ -73,7 +73,7 @@ public class StreamFiltering{
                     .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
 
                     .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                            .setTopic(topic+"_stream")
+                            .setTopic(topic+"_sink")
                             .setValueSerializationSchema(jsonFormatSe)
                             .build()
                     )
