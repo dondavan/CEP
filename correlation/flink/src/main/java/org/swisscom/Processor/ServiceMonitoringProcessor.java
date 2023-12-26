@@ -75,7 +75,6 @@ public class ServiceMonitoringProcessor extends ProcessFunction<Zabbix_events_PO
             }else {
                 serviceMonitoringOutputPojo.onDuty = "{EVENT.TAGS.ONDUTY}";
             }
-            System.out.println(serviceMonitoringOutputPojo);
             collector.collect(serviceMonitoringOutputPojo);
 
         }

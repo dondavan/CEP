@@ -92,7 +92,7 @@ for i in range(len(targets_data)):
                     
                     # Generate timestamp within the past 5 min
                     elif(fields_data[i][item_key] == 'RAND_TIME_ISO8601'):
-                        datetime_start =  datetime.now() - timedelta(minutes=5)
+                        datetime_start =  datetime.now() - timedelta(hours=48)
                         generated_time = fake.date_time_between(start_date = datetime_start,end_date = datetime.now(), tzinfo=timezone.utc)
                         # drop millisecond and change timezone representation into Z
                         generated_time = generated_time.replace(microsecond=0)

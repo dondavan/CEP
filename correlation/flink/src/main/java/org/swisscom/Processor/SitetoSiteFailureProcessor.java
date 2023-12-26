@@ -3,17 +3,18 @@ package org.swisscom.Processor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
-import org.swisscom.POJOs.SitetoSiteFailure_POJO;
+import org.swisscom.POJOs.Aggregation_Alert_POJO;
 import org.swisscom.POJOs.Zabbix_events_POJO;
 import org.swisscom.States.SitetoSiteFailureState;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
-public class SitetoSiteFailureProcessor extends ProcessWindowFunction<Zabbix_events_POJO, SitetoSiteFailure_POJO, String, TimeWindow> {
+
+public class SitetoSiteFailureProcessor extends ProcessWindowFunction<Zabbix_events_POJO, Aggregation_Alert_POJO, String, TimeWindow> {
 
     /* Count the occurrence of type of event*/
     private ValueState<SitetoSiteFailureState> countState;
@@ -24,7 +25,7 @@ public class SitetoSiteFailureProcessor extends ProcessWindowFunction<Zabbix_eve
     }
 
     @Override
-    public void process(String s, ProcessWindowFunction<Zabbix_events_POJO, SitetoSiteFailure_POJO, String, TimeWindow>.Context context, Iterable<Zabbix_events_POJO> iterable, Collector<SitetoSiteFailure_POJO> collector) throws Exception {
+    public void process(String s, ProcessWindowFunction<Zabbix_events_POJO, Aggregation_Alert_POJO, String, TimeWindow>.Context context, Iterable<Zabbix_events_POJO> iterable, Collector<Aggregation_Alert_POJO> collector) throws Exception {
         /*
         1.Check for alerts that are closed within the timeframe,and consider filtering them out. The alert is a non-issue,
         and it is likely just bad network conditions not a failure
@@ -34,28 +35,50 @@ public class SitetoSiteFailureProcessor extends ProcessWindowFunction<Zabbix_eve
 
         // retrieve the current state
         SitetoSiteFailureState current = this.countState.value();
-        long count = 0;
         if (current == null) {
             current = new SitetoSiteFailureState();
-            System.out.println("999");
         }
         // Get event from window iterator
         for (Zabbix_events_POJO zabbixEventsPojo: iterable) {
-            System.out.println(zabbixEventsPojo);
-            // retrieve the current count
-            count ++;
-            /* Filtering out closed event, by not reporting  */
-            if(zabbixEventsPojo.zabbix_action.equals("create")){
-                current.count++;
+            /* Filter out event by not counting it */
+            /* Filtering out closed event  */
+            /* Filter out event that is from 24 hours ago */
+            if(zabbixEventsPojo.zabbix_action.equals("create")) {
+                Instant instant = Instant.parse( zabbixEventsPojo.action_datetime ) ;
+                if(instant.isAfter(Instant.now().minus(24 , ChronoUnit.HOURS))){
+                    current.count++;
+                }
             }
-            System.out.println(current.count);
-
             // write the state back
             countState.update(current);
-            System.out.println(count);
+
+            if(Event_trigger(current.count)){
+                Aggregation_Alert_POJO aggregationAlertPojo = new Aggregation_Alert_POJO();
+
+                /* Parse timestamp */
+                Instant windowStart = Instant.ofEpochMilli(context.window().getStart());
+                Instant windowEnd = Instant.now(); /*End of current window counting which is now*/
+                windowEnd = windowEnd.truncatedTo(ChronoUnit.SECONDS);
+
+                aggregationAlertPojo.alert_type     = "S2S_VPN";
+                aggregationAlertPojo.count          = current.count;
+                aggregationAlertPojo.window_start   = windowStart.toString();
+                aggregationAlertPojo.window_end     = windowEnd.toString();
+                System.out.println(windowEnd);
+                collector.collect(aggregationAlertPojo);
+            }
 
             /* Report event and state processing */
         }
+
+    }
+
+    /* Reimplemented from original ksql query, WHERE statement*/
+    private boolean Event_trigger(long count){
+
+        /* Policy to be decided */
+
+        return true;
 
     }
 }

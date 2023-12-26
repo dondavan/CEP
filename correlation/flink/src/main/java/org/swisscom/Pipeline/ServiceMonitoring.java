@@ -10,10 +10,11 @@ import org.apache.flink.formats.json.JsonDeserializationSchema;
 import org.apache.flink.formats.json.JsonSerializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.swisscom.POJOs.ServiceMonitoringOutput_POJO;
-import org.swisscom.POJOs.SitetoSiteFailure_POJO;
+import org.swisscom.POJOs.Aggregation_Alert_POJO;
 import org.swisscom.POJOs.Zabbix_events_POJO;
 import org.swisscom.Processor.ServiceMonitoringProcessor;
 import org.swisscom.Processor.SitetoSiteFailureProcessor;
@@ -55,7 +56,7 @@ public class ServiceMonitoring {
             /* Json Deserializer and Serializer for Data from Kafka Topic */
             JsonDeserializationSchema<Zabbix_events_POJO> jsonFormatDe=new JsonDeserializationSchema<>(Zabbix_events_POJO.class);
             JsonSerializationSchema<ServiceMonitoringOutput_POJO> ServiceMonitoring_JsonFormatSe=new JsonSerializationSchema<>();
-            JsonSerializationSchema<SitetoSiteFailure_POJO> SitetoSiteFailure_JsonFormatSe=new JsonSerializationSchema<>();
+            JsonSerializationSchema<Aggregation_Alert_POJO> SitetoSiteFailure_JsonFormatSe=new JsonSerializationSchema<>();
 
 
             /*****************************************************************************************
@@ -74,10 +75,10 @@ public class ServiceMonitoring {
                     .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                     .build();
 
-            KafkaSink<SitetoSiteFailure_POJO> SitetoSiteFailure_Sink = KafkaSink.<SitetoSiteFailure_POJO>builder()
+            KafkaSink<Aggregation_Alert_POJO> SitetoSiteFailure_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
                     .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
                     .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                            .setTopic("ServiceMonitoring_sink")
+                            .setTopic("AGGREGATION_ALERTS_TOPIC")
                             .setValueSerializationSchema(SitetoSiteFailure_JsonFormatSe)
                             .build()
                     )
@@ -111,9 +112,9 @@ public class ServiceMonitoring {
             ServiceMonitoring_Stream.sinkTo(ServiceMonitoring_Sink);
 
             /* Create a Site to Site Failure transformation data stream */
-            DataStream<SitetoSiteFailure_POJO> SitetoSiteFailure_Stream = kafkaStream
+            DataStream<Aggregation_Alert_POJO> SitetoSiteFailure_Stream = kafkaStream
                                                                             .keyBy(value -> value.zabbix_environment)
-                                                                            .window(TumblingProcessingTimeWindows.of(Time.seconds(5)))
+                                                                            .window(TumblingProcessingTimeWindows.of(Time.seconds(60)))
                                                                             .process(new SitetoSiteFailureProcessor());
 
             SitetoSiteFailure_Stream.sinkTo(SitetoSiteFailure_Sink);
