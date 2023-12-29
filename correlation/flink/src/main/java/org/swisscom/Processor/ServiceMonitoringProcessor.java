@@ -1,19 +1,12 @@
 package org.swisscom.Processor;
 
 import org.apache.flink.formats.json.JsonDeserializationSchema;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.swisscom.POJOs.ServiceMonitoringOutput_POJO;
 import org.swisscom.POJOs.Zabbix_events_POJO;
-import org.swisscom.Pipeline.StreamFiltering;
 
 import java.lang.reflect.InvocationTargetException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Date;
 
 public class ServiceMonitoringProcessor extends ProcessFunction<Zabbix_events_POJO,ServiceMonitoringOutput_POJO> {
 

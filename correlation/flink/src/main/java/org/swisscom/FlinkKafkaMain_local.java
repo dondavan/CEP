@@ -2,8 +2,9 @@ package org.swisscom;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.swisscom.Pipeline.ServiceMonitoring;
-import org.swisscom.Pipeline.StreamFiltering;
+import org.swisscom.Pipeline.NQAPipeline;
+import org.swisscom.Pipeline.ZabbixPipeline;
+import org.swisscom.Pipeline.ZabbixTCIJointPipeline;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -43,18 +44,22 @@ public class FlinkKafkaMain_local {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        Collection<String> toTe = new ArrayList<String>(Collections.singletonList(topics.get(0)));
+        Collection<String> toTe1 = new ArrayList<String>(Collections.singletonList(topics.get(0)));
         Collection<String> toTe2 = new ArrayList<String>(Collections.singletonList(topics.get(1)));
+        Collection<String> toTe3 = new ArrayList<String>(Collections.singletonList(topics.get(2)));
 
-        ServiceMonitoring serviceMonitoring = new ServiceMonitoring(prop,toTe,groupID,env);
-        serviceMonitoring.createKafkaSource();
+        ZabbixPipeline zabbixPipeline = new ZabbixPipeline(prop,toTe1,groupID,env);
+        zabbixPipeline.createKafkaSource();
 
-        StreamFiltering streamFiltering = new StreamFiltering(prop,toTe2,groupID,env);
-        streamFiltering.createKafkaSource();
+        ZabbixTCIJointPipeline zabbixTCIJointPipeline = new ZabbixTCIJointPipeline(prop,toTe2,groupID,env);
+        zabbixTCIJointPipeline.createKafkaSource();
+
+        NQAPipeline nqaPipeline = new NQAPipeline(prop,toTe3,groupID,env);
+        nqaPipeline.createKafkaSource();
 
         /* Execute data stream process*/
         try{
-            env.execute("Stream Filtering");
+            env.execute("Event Correlation");
         }catch (Exception e){
             System.out.println(e.getMessage());
         }

@@ -1,20 +1,16 @@
 package org.swisscom.Pipeline;
 
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
-import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
 import org.apache.flink.formats.json.JsonDeserializationSchema;
 import org.apache.flink.formats.json.JsonSerializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.swisscom.POJOs.TCI_POJO;
-import org.swisscom.Processor.ServiceMonitoringProcessor;
 import org.swisscom.Processor.StreamFilteringProcessor;
 
 import java.time.Duration;
@@ -23,7 +19,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
-public class StreamFiltering{
+public class ZabbixTCIJointPipeline {
     private final Properties pros;
 
     /* List of topic subscribed to  */
@@ -34,7 +30,7 @@ public class StreamFiltering{
     /* Consumer group ID */
     String groupID = "Test-group";
 
-    public StreamFiltering(Properties pros, Collection<String> topics, String groupID, StreamExecutionEnvironment env){
+    public ZabbixTCIJointPipeline(Properties pros, Collection<String> topics, String groupID, StreamExecutionEnvironment env){
         this.pros = pros;
         this.topics = new ArrayList<String>(topics);
         this.groupID = groupID;
@@ -46,9 +42,38 @@ public class StreamFiltering{
 
         /* Setup separate source and sink for different topic, for different deserializer, operator */
         for (String topic:topics) {
+            /*****************************************************************************************
+
+                                            Serialization Configuration
+
+             *****************************************************************************************/
             JsonDeserializationSchema<TCI_POJO> jsonFormatDe=new JsonDeserializationSchema<>(TCI_POJO.class);
             JsonSerializationSchema<TCI_POJO> jsonFormatSe=new JsonSerializationSchema<>();
 
+
+            /*****************************************************************************************
+
+                                                Sink Configuration
+
+             *****************************************************************************************/
+            /* Instantiate a sink for stream processing output*/
+            KafkaSink<TCI_POJO> sink = KafkaSink.<TCI_POJO>builder()
+                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+
+                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
+                            .setTopic("FILTERED_EVENT_TOPIC")
+                            .setValueSerializationSchema(jsonFormatSe)
+                            .build()
+                    )
+                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                    .build();
+
+
+            /*****************************************************************************************
+
+                                            Data Stream Configuration
+
+             *****************************************************************************************/
             /* Instantiate a KafkaSource Instance using builder class */
             KafkaSource<TCI_POJO> kafkaSource = KafkaSource.<TCI_POJO >builder()
 
@@ -67,20 +92,10 @@ public class StreamFiltering{
 
             /* Transformation on data stream*/
             kafkaStream.process(new StreamFilteringProcessor());
-
-            /* Instantiate a sink for stream processing output*/
-            KafkaSink<TCI_POJO> sink = KafkaSink.<TCI_POJO>builder()
-                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
-
-                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                            .setTopic(topic+"_sink")
-                            .setValueSerializationSchema(jsonFormatSe)
-                            .build()
-                    )
-                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
-                    .build();
-
             kafkaStream.sinkTo(sink);
+
+
+
 
         }
 
