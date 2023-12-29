@@ -8,13 +8,14 @@ Data path is abstrated as a pipeline (implemented using data stream), and each d
 
 
 ![](docs/flink_archi.png)
-
+<br />
 
 Example shows the detail of `Zabbix` pipeline, which contains correlation logic with `Zabbix_events` data, Service Monitoring, Site-to-Site Failure Aggregation, No-Connection Internet Aggregation. A process pipeline starts with a kafka source and follows by multiple chains of data stream and kafka sink. Where each data stream is concrete data stream processing logic, contains features like processor function, trigger, state processing and window processing.\
 Kafka source and kafka sinks are configured with corresponding concrete topic following business logic. In this case, kafka source is configured to consume from topic `Zabbix_events`, Service Monitoring Sink is configured to produce to topic `SERVICE_MONITORING_TOPIC` while Site-to-Site Failure Sink and No-Connection Internet Sink both produce to `AGGREGATION_ALERTS_TOPIC`.
 
 
 ![](docs/detial_pipe.png)
+<br />
 
 
 ## Generating Engine
