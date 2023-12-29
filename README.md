@@ -4,6 +4,7 @@ Contains of a data correlation engine and a data generation engine(for testing p
 
 
 ## Correlation Engine
+### Overall Architecture
 This project `./correlation` has a legacy KSQL implemenation and a Flink implemenation.\
 Current flink implementaiton is based on legacy KSQL implementation, it consumes data from 3 kafka event topics `Zabbix_events`, `TCI`, `nqa_raw` and produce into 3 kafka alert topics `FILTERED_EVENT_TOPIC`, `SERVICE_MONITORING_TOPIC`, `AGGREGATION_ALERTS_TOPIC`.\
 Data path is abstrated as a pipeline (implemented using data stream), and each data correlation business logic is abstracted as a service to be used inside related pipeline (implmented using data stream), has an overall architecture:
@@ -12,6 +13,8 @@ Data path is abstrated as a pipeline (implemented using data stream), and each d
 ![](docs/flink_archi.png)
 <br/><br/>
 
+
+### Inside Pipeline
 Example shows the detail of `Zabbix` pipeline, which contains correlation logic with `Zabbix_events` data, Service Monitoring, Site-to-Site Failure Aggregation, No-Connection Internet Aggregation.\
 A process pipeline starts with a kafka source and follows by multiple chains of data stream and kafka sink.\
  Where each data stream is concrete data stream processing logic, contains features like processor function, trigger, state processing and window processing.\
