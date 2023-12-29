@@ -24,6 +24,7 @@ public class NoConnectionCPEProcessor extends ProcessWindowFunction<nqa_raw_POJO
     public void open(Configuration parameters) throws Exception {
         countState = getRuntimeContext().getState(new ValueStateDescriptor<>("NoConnectionCPEState", NoConnectionCPEState.class));
     }
+
     @Override
     public void process(String s, ProcessWindowFunction<nqa_raw_POJO, Aggregation_Alert_POJO, String, TimeWindow>.Context context, Iterable<nqa_raw_POJO> iterable, Collector<Aggregation_Alert_POJO> collector) throws Exception {
         // retrieve the current state
@@ -43,6 +44,7 @@ public class NoConnectionCPEProcessor extends ProcessWindowFunction<nqa_raw_POJO
         aggregationAlertPojo.count          = current.count;
         aggregationAlertPojo.window_start   = windowStart.toString();
         aggregationAlertPojo.window_end     = windowEnd.toString();
+
         collector.collect(aggregationAlertPojo);
     }
 }

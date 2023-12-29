@@ -17,12 +17,12 @@ public class SitetoSiteFailureTrigger extends Trigger<Zabbix_events_POJO, TimeWi
 
     @Override
     public TriggerResult onElement(Zabbix_events_POJO zabbixEventsPojo, long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
-        ValueState<SitetoSiteFailureState> countState = triggerContext.getPartitionedState(new ValueStateDescriptor<>("siteToSiteState", SitetoSiteFailureState.class));
+        ValueState<SitetoSiteFailureState> countState = triggerContext.getPartitionedState(new ValueStateDescriptor<>("SiteToSiteState", SitetoSiteFailureState.class));
         SitetoSiteFailureState current = countState.value();
         if (current == null) {
             current = new SitetoSiteFailureState();
         }
-        if(zabbixEventsPojo.zabbix_action.equals("create")) {
+        if(!zabbixEventsPojo.zabbix_action.equals("close")) {
             Instant instant = Instant.parse( zabbixEventsPojo.action_datetime ) ;
             if(instant.isAfter(Instant.now().minus(24 , ChronoUnit.HOURS))){
                 current.count++;

@@ -21,7 +21,7 @@ public class SitetoSiteFailureProcessor extends ProcessWindowFunction<Zabbix_eve
 
     @Override
     public void open(Configuration parameters) throws Exception {
-        countState = getRuntimeContext().getState(new ValueStateDescriptor<>("siteToSiteState", SitetoSiteFailureState.class));
+        countState = getRuntimeContext().getState(new ValueStateDescriptor<>("SiteToSiteState", SitetoSiteFailureState.class));
     }
 
     @Override
@@ -50,6 +50,7 @@ public class SitetoSiteFailureProcessor extends ProcessWindowFunction<Zabbix_eve
         aggregationAlertPojo.count          = current.count;
         aggregationAlertPojo.window_start   = windowStart.toString();
         aggregationAlertPojo.window_end     = windowEnd.toString();
+
         collector.collect(aggregationAlertPojo);
 
     }

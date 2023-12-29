@@ -71,6 +71,15 @@ public class NQAPipeline {
                     .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                     .build();
 
+            KafkaSink<Aggregation_Alert_POJO> NoConnectionFOS_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
+                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
+                            .setTopic("AGGREGATION_ALERTS_TOPIC")
+                            .setValueSerializationSchema(Aggregation_Alert_JsonFormatSe)
+                            .build()
+                    )
+                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                    .build();
 
             /*****************************************************************************************
 
@@ -100,7 +109,15 @@ public class NQAPipeline {
                     .trigger(new NoConnectionCPETrigger())
                     .process(new NoConnectionCPEProcessor());
 
+            /* Site to Site Failure Aggregation Stream Processing */
+            DataStream<Aggregation_Alert_POJO> NoConnectionFOS_Stream = kafkaStream
+                    .keyBy(value -> value.metrictype)
+                    .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
+                    .trigger(new NoConnectionFOSTrigger())
+                    .process(new NoConnectionFOSProcessor());
+
             NoConnectionCPE_Stream.sinkTo(NoConnectionCPE_Sink);
+            NoConnectionFOS_Stream.sinkTo(NoConnectionFOS_Sink);
 
 
         }

@@ -15,9 +15,7 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.swisscom.POJOs.ServiceMonitoringOutput_POJO;
 import org.swisscom.POJOs.Aggregation_Alert_POJO;
 import org.swisscom.POJOs.Zabbix_events_POJO;
-import org.swisscom.Processor.ServiceMonitoringProcessor;
-import org.swisscom.Processor.SitetoSiteFailureProcessor;
-import org.swisscom.Processor.SitetoSiteFailureTrigger;
+import org.swisscom.Processor.*;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -86,6 +84,16 @@ public class ZabbixPipeline {
                     .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                     .build();
 
+            KafkaSink<Aggregation_Alert_POJO> NoConnectionInternet_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
+                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
+                            .setTopic("AGGREGATION_ALERTS_TOPIC")
+                            .setValueSerializationSchema(Aggregation_Alert_JsonFormatSe)
+                            .build()
+                    )
+                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                    .build();
+
 
             /*****************************************************************************************
 
@@ -119,8 +127,15 @@ public class ZabbixPipeline {
                                                                             .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
                                                                             .trigger(new SitetoSiteFailureTrigger())
                                                                             .process(new SitetoSiteFailureProcessor());
+            /* No Connection Internet Aggregation Stream Processing */
+            DataStream<Aggregation_Alert_POJO>  NoConnectionInternet_Stream = kafkaStream
+                    .keyBy(value -> value.zabbix_environment)
+                    .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
+                    .trigger(new NoConnectionInternetTrigger())
+                    .process(new NoConnectionInternetProcessor());
 
             SitetoSiteFailure_Stream.sinkTo(SitetoSiteFailure_Sink);
+            NoConnectionInternet_Stream.sinkTo(NoConnectionInternet_Sink);
 
         }
     }
