@@ -1,0 +1,13 @@
+{
+  "inputs": [
+    {"topic":"zabbix-nqa-probe","timestamp":1,"key": null,"value": {"interval":300,"metrictype":"CPENqaProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":1,"value":4.2}},
+    {"topic":"zabbix-nqa-probe","timestamp":2,"key": null,"value": {"interval":300,"metrictype":"CPENqaProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":2,"value":0}},
+    {"topic":"zabbix-nqa-probe","timestamp":3,"key": null,"value": {"interval":300,"metrictype":"AnotherProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":3,"value":0}},
+    {"topic":"zabbix-nqa-probe","timestamp":4,"key": null,"value": {"interval":300,"metrictype":"CPENqaProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":4,"value":0}},
+    {"topic":"zabbix-nqa-probe","timestamp":900001,"key": null,"value": {"interval":300,"metrictype":"CPENqaProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":900001,"value":0}},
+    {"topic":"zabbix-nqa-probe","timestamp":900002,"key": null,"value": {"interval":300,"metrictype":"CPENqaProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":900002,"value":0}},
+    {"topic":"zabbix-nqa-probe","timestamp":900003,"key": null,"value": {"interval":300,"metrictype":"CPENqaProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":900003,"value":0}},
+    {"topic":"zabbix-nqa-probe","timestamp":900004,"key": null,"value": {"interval":300,"metrictype":"CPENqaProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":900004,"value":0}},
+    {"topic":"zabbix-nqa-probe","timestamp":900005,"key": null,"value": {"interval":300,"metrictype":"CPENqaProbe","metric":"Average","tenantId":"12345abcde","destination_ip":"192.168.100.2","vrf":"4A_4B","source_ip":"192.168.100.1","dc":"dc-1","timestamp":900005,"value":0}}
+  ]
+}
