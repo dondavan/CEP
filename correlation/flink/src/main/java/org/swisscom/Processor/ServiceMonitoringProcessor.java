@@ -13,7 +13,7 @@ public class ServiceMonitoringProcessor extends ProcessFunction<Zabbix_events_PO
 
     @Override
     public void processElement(Zabbix_events_POJO zabbixEvent, ProcessFunction<Zabbix_events_POJO, ServiceMonitoringOutput_POJO>.Context context, Collector<ServiceMonitoringOutput_POJO> collector) throws Exception {
-        //System.out.println(zabbixEvent);
+
         /* Event trigger through String matching*/
         if (Event_trigger(zabbixEvent.trigger_name,zabbixEvent.event_tags.get("VNF-Type"))){
             ServiceMonitoringOutput_POJO serviceMonitoringOutputPojo = new ServiceMonitoringOutput_POJO();
