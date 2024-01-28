@@ -26,7 +26,8 @@ public class NoConnectionFOSProcessor extends ProcessWindowFunction<nqa_raw_POJO
 
     @Override
     public void process(String s, ProcessWindowFunction<nqa_raw_POJO, Aggregation_Alert_POJO, String, TimeWindow>.Context context, Iterable<nqa_raw_POJO> iterable, Collector<Aggregation_Alert_POJO> collector) throws Exception {
-        // retrieve the current state
+
+        /* Retrieve the current state */
         NoConnectionFOSState current = this.countState.value();
         if (current == null) {
             current = new NoConnectionFOSState();

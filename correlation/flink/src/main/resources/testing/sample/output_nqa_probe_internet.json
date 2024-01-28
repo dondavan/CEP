@@ -1,0 +1,6 @@
+{
+  "outputs": [
+    {"topic": "ksqldb-aggregation-alerts", "timestamp": 1200003, "window": {"start": 1200000, "end": 1500000, "type": "time"}, "key": "NQA_PROBES_INTERNET", "value": {"count": 3, "window_start":"1970-01-01T00:20:00Z", "window_end":"1970-01-01T00:25:00Z"}},
+    {"topic": "ksqldb-aggregation-alerts", "timestamp": 1200005, "window": {"start": 1200000, "end": 1500000, "type": "time"}, "key": "NQA_PROBES_INTERNET", "value": {"count": 4, "window_start":"1970-01-01T00:20:00Z", "window_end":"1970-01-01T00:25:00Z"}}
+  ]
+}

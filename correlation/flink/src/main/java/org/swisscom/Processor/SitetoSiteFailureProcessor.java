@@ -26,14 +26,8 @@ public class SitetoSiteFailureProcessor extends ProcessWindowFunction<Zabbix_eve
 
     @Override
     public void process(String s, ProcessWindowFunction<Zabbix_events_POJO, Aggregation_Alert_POJO, String, TimeWindow>.Context context, Iterable<Zabbix_events_POJO> iterable, Collector<Aggregation_Alert_POJO> collector) throws Exception {
-        /*
-        1.Check for alerts that are closed within the timeframe,and consider filtering them out. The alert is a non-issue,
-        and it is likely just bad network conditions not a failure
-        2.Check for alerts that have been open for over a day, and filter these out too. The alert is a long-standing failure, likely because a customer has disconnected their site, not a system failure.
-        3.Determine the threshold based on previous data instead of on a static threshold
-         */
 
-        // retrieve the current state
+        /* Retrieve the current state */
         SitetoSiteFailureState current = this.countState.value();
         if (current == null) {
             current = new SitetoSiteFailureState();

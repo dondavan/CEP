@@ -1,0 +1,1 @@
+python3 ./producer.py -c 'kafka_config_local.ini'

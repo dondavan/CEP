@@ -1,0 +1,6 @@
+{
+  "outputs": [
+    {"topic": "ksqldb-aggregation-alerts", "timestamp": 1499993, "window": {"start": 1200000, "end": 1500000, "type": "time"}, "key": "FMG pair down *lss150", "value": {"count": 2, "window_start":"1970-01-01T00:20:00Z", "window_end":"1970-01-01T00:25:00Z"}},
+    {"topic": "ksqldb-aggregation-alerts", "timestamp": 2400003, "window": {"start": 2400000, "end": 2700000, "type": "time"}, "key": "FMG pair down *fmg-01", "value": {"count": 2, "window_start":"1970-01-01T00:40:00Z", "window_end":"1970-01-01T00:45:00Z"}}
+  ]
+}

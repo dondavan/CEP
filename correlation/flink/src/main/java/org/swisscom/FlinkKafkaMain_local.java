@@ -19,9 +19,6 @@ public class FlinkKafkaMain_local {
 
     public static void main(String[] args) {
 
-        /* Topics that consumer subscribe to */
-        List<String> topics = new ArrayList<String>(Arrays.asList("Zabbix_events","TCI","nqa_raw"));
-
         /* Consumer group ID */
         String groupID = "Test-group";
 
@@ -44,17 +41,13 @@ public class FlinkKafkaMain_local {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
-        Collection<String> toTe1 = new ArrayList<String>(Collections.singletonList(topics.get(0)));
-        Collection<String> toTe2 = new ArrayList<String>(Collections.singletonList(topics.get(1)));
-        Collection<String> toTe3 = new ArrayList<String>(Collections.singletonList(topics.get(2)));
-
-        ZabbixPipeline zabbixPipeline = new ZabbixPipeline(prop,toTe1,groupID,env);
+        ZabbixPipeline zabbixPipeline = new ZabbixPipeline(prop,groupID,env);
         zabbixPipeline.createKafkaSource();
 
-        ZabbixTCIJointPipeline zabbixTCIJointPipeline = new ZabbixTCIJointPipeline(prop,toTe2,groupID,env);
+        ZabbixTCIJointPipeline zabbixTCIJointPipeline = new ZabbixTCIJointPipeline(prop,groupID,env);
         zabbixTCIJointPipeline.createKafkaSource();
 
-        NQAPipeline nqaPipeline = new NQAPipeline(prop,toTe3,groupID,env);
+        NQAPipeline nqaPipeline = new NQAPipeline(prop,groupID,env);
         nqaPipeline.createKafkaSource();
 
         /* Execute data stream process*/

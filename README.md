@@ -26,6 +26,10 @@ While Site-to-Site Failure Sink and No-Connection Internet Sink both produce to 
 ![](docs/detial_pipe.png)
 <br/><br/>
 
+### Why Flink
+State Processing and Event Trigger: Flexiablity implementing logic
+Processing time and Event time: Wall time and data time
+
 
 ## Generating Engine
 This project `./datagen` is for producing event data for tesing purpose, consists of a data generation engine and a Kafka producer instance:\

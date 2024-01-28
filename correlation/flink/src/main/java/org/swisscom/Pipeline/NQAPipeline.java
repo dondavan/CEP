@@ -27,100 +27,96 @@ import java.util.Properties;
 public class NQAPipeline {
     private final Properties pros;
 
-    /* List of topic subscribed to  */
-    private final List<String> topics;
-
     private final StreamExecutionEnvironment env;
 
     /* Consumer group ID */
     String groupID = "Test-group";
-    public NQAPipeline(Properties pros, Collection<String> topics, String groupID, StreamExecutionEnvironment env){
+
+    /* List of topic subscribed to  */
+    private final String source_topic = "zabbix-nqa-probe";
+
+    public NQAPipeline(Properties pros, String groupID, StreamExecutionEnvironment env){
         this.pros = pros;
-        this.topics = new ArrayList<String>(topics);
         this.groupID = groupID;
         this.env = env;
-        System.out.println(topics);
+        System.out.println(source_topic);
     }
 
     public void createKafkaSource() {
 
         /* Setup separate source and sink for different topic, for different deserializer, operator */
-        for (String topic:topics) {
-            /*****************************************************************************************
+        /*****************************************************************************************
 
-                                            Serialization Configuration
+         Serialization Configuration
 
-             *****************************************************************************************/
-            /* Json Deserializer and Serializer for Data from Kafka Topic */
-            JsonDeserializationSchema<nqa_raw_POJO> jsonFormatDe=new JsonDeserializationSchema<>(nqa_raw_POJO.class);
-            JsonSerializationSchema<Aggregation_Alert_POJO> Aggregation_Alert_JsonFormatSe=new JsonSerializationSchema<>();
-
-
-            /*****************************************************************************************
-
-                                            Sink Configuration
-
-             *****************************************************************************************/
-            KafkaSink<Aggregation_Alert_POJO> NoConnectionCPE_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
-                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
-                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                            .setTopic("AGGREGATION_ALERTS_TOPIC")
-                            .setValueSerializationSchema(Aggregation_Alert_JsonFormatSe)
-                            .build()
-                    )
-                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
-                    .build();
-
-            KafkaSink<Aggregation_Alert_POJO> NoConnectionFOS_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
-                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
-                    .setRecordSerializer(KafkaRecordSerializationSchema.builder()
-                            .setTopic("AGGREGATION_ALERTS_TOPIC")
-                            .setValueSerializationSchema(Aggregation_Alert_JsonFormatSe)
-                            .build()
-                    )
-                    .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
-                    .build();
-
-            /*****************************************************************************************
-
-                                            Data Stream Configuration
-
-             *****************************************************************************************/
-            /* Instantiate a KafkaSource Instance using builder class */
-            KafkaSource<nqa_raw_POJO> kafkaSource = KafkaSource.<nqa_raw_POJO>builder()
-
-                    /* Server Topic GroupID */
-                    .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
-                    .setTopics(topic)
-                    .setGroupId(this.groupID)
-
-                    /* Consumer behavior */
-                    .setStartingOffsets(OffsetsInitializer.earliest())
-                    .setValueOnlyDeserializer(jsonFormatDe)
-                    .build();
-
-            /* Get a data stream from environment through added Kafka Source*/
-            DataStream<nqa_raw_POJO> kafkaStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)), topic+"_stream");
-
-            /* Site to Site Failure Aggregation Stream Processing */
-            DataStream<Aggregation_Alert_POJO> NoConnectionCPE_Stream = kafkaStream
-                    .keyBy(value -> value.metrictype)
-                    .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
-                    .trigger(new NoConnectionCPETrigger())
-                    .process(new NoConnectionCPEProcessor());
-
-            /* Site to Site Failure Aggregation Stream Processing */
-            DataStream<Aggregation_Alert_POJO> NoConnectionFOS_Stream = kafkaStream
-                    .keyBy(value -> value.metrictype)
-                    .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
-                    .trigger(new NoConnectionFOSTrigger())
-                    .process(new NoConnectionFOSProcessor());
-
-            NoConnectionCPE_Stream.sinkTo(NoConnectionCPE_Sink);
-            NoConnectionFOS_Stream.sinkTo(NoConnectionFOS_Sink);
+         *****************************************************************************************/
+        /* Json Deserializer and Serializer for Data from Kafka Topic */
+        JsonDeserializationSchema<nqa_raw_POJO> jsonFormatDe=new JsonDeserializationSchema<>(nqa_raw_POJO.class);
+        JsonSerializationSchema<Aggregation_Alert_POJO> Aggregation_Alert_JsonFormatSe=new JsonSerializationSchema<>();
 
 
-        }
+        /*****************************************************************************************
+
+         Sink Configuration
+
+         *****************************************************************************************/
+        KafkaSink<Aggregation_Alert_POJO> NoConnectionCPE_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
+                .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+                .setRecordSerializer(KafkaRecordSerializationSchema.builder()
+                        .setTopic("aggregation-alerts")
+                        .setValueSerializationSchema(Aggregation_Alert_JsonFormatSe)
+                        .build()
+                )
+                .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                .build();
+
+        KafkaSink<Aggregation_Alert_POJO> NoConnectionFOS_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
+                .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+                .setRecordSerializer(KafkaRecordSerializationSchema.builder()
+                        .setTopic("aggregation-alerts")
+                        .setValueSerializationSchema(Aggregation_Alert_JsonFormatSe)
+                        .build()
+                )
+                .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
+                .build();
+
+        /*****************************************************************************************
+
+         Data Stream Configuration
+
+         *****************************************************************************************/
+        /* Instantiate a KafkaSource Instance using builder class */
+        KafkaSource<nqa_raw_POJO> kafkaSource = KafkaSource.<nqa_raw_POJO>builder()
+
+                /* Server Topic GroupID */
+                .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+                .setTopics(source_topic)
+                .setGroupId(this.groupID)
+
+                /* Consumer behavior */
+                .setStartingOffsets(OffsetsInitializer.latest())
+                .setValueOnlyDeserializer(jsonFormatDe)
+                .build();
+
+        /* Get a data stream from environment through added Kafka Source*/
+        DataStream<nqa_raw_POJO> kafkaStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)), source_topic+"_stream");
+
+        /* Site to Site Failure Aggregation Stream Processing */
+        DataStream<Aggregation_Alert_POJO> NoConnectionCPE_Stream = kafkaStream
+                .keyBy(value -> value.metrictype)
+                .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
+                .trigger(new NoConnectionCPETrigger())
+                .process(new NoConnectionCPEProcessor());
+
+        /* Site to Site Failure Aggregation Stream Processing */
+        DataStream<Aggregation_Alert_POJO> NoConnectionFOS_Stream = kafkaStream
+                .keyBy(value -> value.metrictype)
+                .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
+                .trigger(new NoConnectionFOSTrigger())
+                .process(new NoConnectionFOSProcessor());
+
+        NoConnectionCPE_Stream.sinkTo(NoConnectionCPE_Sink);
+        NoConnectionFOS_Stream.sinkTo(NoConnectionFOS_Sink);
 
     }
 

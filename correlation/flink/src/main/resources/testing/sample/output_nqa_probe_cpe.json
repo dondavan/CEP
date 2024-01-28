@@ -1,0 +1,7 @@
+{
+  "outputs": [
+    {"topic": "ksqldb-aggregation-alerts", "timestamp": 900003, "window": {"start": 900000, "end": 1200000, "type": "time"}, "key": "NQA_PROBES_CPE", "value": {"count": 3, "window_start":"1970-01-01T00:15:00Z", "window_end":"1970-01-01T00:20:00Z"}},
+    {"topic": "ksqldb-aggregation-alerts", "timestamp": 900004, "window": {"start": 900000, "end": 1200000, "type": "time"}, "key": "NQA_PROBES_CPE", "value": {"count": 4, "window_start":"1970-01-01T00:15:00Z", "window_end":"1970-01-01T00:20:00Z"}},
+    {"topic": "ksqldb-aggregation-alerts", "timestamp": 900005, "window": {"start": 900000, "end": 1200000, "type": "time"}, "key": "NQA_PROBES_CPE", "value": {"count": 5, "window_start":"1970-01-01T00:15:00Z", "window_end":"1970-01-01T00:20:00Z"}}
+  ]
+}

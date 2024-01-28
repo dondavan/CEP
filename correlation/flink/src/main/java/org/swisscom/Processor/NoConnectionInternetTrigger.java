@@ -13,33 +13,46 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 public class NoConnectionInternetTrigger extends Trigger<Zabbix_events_POJO, TimeWindow> {
-
-
     @Override
+    /* Called each time when an element that is added to a window. */
     public TriggerResult onElement(Zabbix_events_POJO zabbixEventsPojo, long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
+
+        /* Get event counting from Flink state */
         ValueState<NoConnectionInternetState> countState = triggerContext.getPartitionedState(new ValueStateDescriptor<>("NoConnectionInternetState", NoConnectionInternetState.class));
         NoConnectionInternetState current = countState.value();
         if (current == null) {
             current = new NoConnectionInternetState();
         }
-        if(zabbixEventsPojo.zabbix_action.equals("create") && zabbixEventsPojo.trigger_name.contains("Internet NQA Target not reachable from")) {
-            Instant instant = Instant.parse( zabbixEventsPojo.action_datetime ) ;
-            if(instant.isAfter(Instant.now().minus(24 , ChronoUnit.HOURS))){
-                current.count++;
-            }
+
+        Instant instant = Instant.parse( zabbixEventsPojo.action_datetime );
+        boolean fire = false;
+
+        /* Apply Filter Policy*/
+        if(     zabbixEventsPojo.zabbix_action.equals("create") &&
+                zabbixEventsPojo.trigger_name.matches("Internet NQA Target not reachable from.*") &&
+                instant.isAfter(Instant.now().minus(24 , ChronoUnit.HOURS)))
+        {
+            current.count++;
+            if(Event_trigger(current.count)) fire = true;
         }
-        // write the state back
-        countState.update(current);
-        if(Event_trigger(current.count)) return TriggerResult.FIRE_AND_PURGE;
+
+        countState.update(current); // write the state back
+        if(fire)return TriggerResult.FIRE_AND_PURGE;
         return TriggerResult.CONTINUE;
     }
 
     @Override
+    /* Called when a registered processing-time timer fires.
+    *   Processing time refers to the system time of the machine that is executing the respective operation.
+    * */
     public TriggerResult onProcessingTime(long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
-        return TriggerResult.FIRE_AND_PURGE;
+        return TriggerResult.CONTINUE;
     }
 
     @Override
+    /* Called when a registered event-time timer fires.
+    * Event time is the time that each individual event occurred on its producing device
+    * */
     public TriggerResult onEventTime(long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
         return TriggerResult.CONTINUE;
     }
@@ -52,7 +65,7 @@ public class NoConnectionInternetTrigger extends Trigger<Zabbix_events_POJO, Tim
     private boolean Event_trigger(long count){
 
         /* Policy to be decided */
-        return true;
+        return count>5;
 
     }
 }

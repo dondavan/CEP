@@ -49,13 +49,13 @@ public class ServiceMonitoringProcessor extends ProcessFunction<Zabbix_events_PO
             serviceMonitoringOutputPojo.timestamp = newdate;
 
 
-            if(zabbixEvent.trigger_name.matches("%High Number of ICMP%")){
+            if(zabbixEvent.trigger_name.matches(".*High Number of ICMP.*")){
                 serviceMonitoringOutputPojo.platform = "VMPingLossExceeded";
-            } else if (zabbixEvent.trigger_name.matches("%Unavailable by%")){
+            } else if (zabbixEvent.trigger_name.matches(".*Unavailable by.*")){
                 serviceMonitoringOutputPojo.platform = "NodeDownIWG";
-            }else if (zabbixEvent.trigger_name.matches("%High Number of Nodes%")){
+            }else if (zabbixEvent.trigger_name.matches(".*High Number of Nodes.*")){
                 serviceMonitoringOutputPojo.platform = "VMDownExceeded";
-            }else if (zabbixEvent.trigger_name.matches("%Heartbeat%")){
+            }else if (zabbixEvent.trigger_name.matches(".*Heartbeat.*")){
                 serviceMonitoringOutputPojo.platform = "Heartbeat";
             }else {
                 serviceMonitoringOutputPojo.platform = "";
@@ -77,11 +77,11 @@ public class ServiceMonitoringProcessor extends ProcessFunction<Zabbix_events_PO
     /* Reimplemented from original ksql query, WHERE statement*/
     private boolean Event_trigger(String trigger_name, String event_tags){
 
-        String expression1 = "%Heartbeat%";
-        String expression2 = "%High Number of Nodes in %down%";
-        String expression3 = "%High Number of ICMP ping loss%";
-        String expression4 = "%Unavailable by ICMPping%";
-        String expression5 = "hevpe";
+        String expression1 = ".*Heartbeat.*";
+        String expression2 = ".*High Number of Nodes in %down.*";
+        String expression3 = ".*High Number of ICMP ping loss.*";
+        String expression4 = ".*Unavailable by ICMPping.*";
+        String expression5 = ".*hevpe.*";
 
         return  trigger_name.matches(expression1) |
                 trigger_name.matches(expression2) |
@@ -90,20 +90,4 @@ public class ServiceMonitoringProcessor extends ProcessFunction<Zabbix_events_PO
 
     }
 
-    public Object deseralizer(Object obj, String topic){
-
-        /* Get POJO object through reflection*/
-        Object POJO;
-        JsonDeserializationSchema<?> jsonFormat;
-        String POJO_LOCATION = "org.swisscom.POJOs."+topic+"_POJO"; /* package name + class name */
-        try {
-            POJO = (Object) Class.forName(POJO_LOCATION).getConstructor().newInstance();
-            jsonFormat=new JsonDeserializationSchema<>(Class.forName(POJO_LOCATION));
-
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                 NoSuchMethodException | ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        return POJO;
-    }
 }

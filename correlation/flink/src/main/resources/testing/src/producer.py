@@ -13,10 +13,12 @@ from confluent_kafka.schema_registry.json_schema import JSONSerializer, JSONDese
 
 # Parse the command line.
 parser = ArgumentParser()
+
+parser.add_argument('-l', '--log', help="Logging", type=str, required= False, default="../log/test_producer.log")
 parser.add_argument('-c', '--config_file', type=FileType('r'), required= False, default="./kafka_config_local.ini")
 parser.add_argument('-kk', '--kafka_key', help="Kafka Key", type=str, required= False, default="test")
-parser.add_argument('-id', '--input_dir', help="Generated json file directory", required= False, type=str, default="../data/output/")
-parser.add_argument('-f', '--file', help="Name of json file to be written into topic", required= False, type=list, default=['Zabbix_events', 'TCI', 'nqa_raw'])
+parser.add_argument('-id', '--input_dir', help="Generated json file directory", required= False, type=str, default="../sample/")
+parser.add_argument('-f', '--file', help="Name of json file to be written into topic", required= False, type=list, default=['input_s2s_tunnel_down'])
 
 args = parser.parse_args()
 
@@ -35,12 +37,11 @@ class kafka_producer:
 
 
     string_serializer = StringSerializer('utf_8')
-    #json_serializer = JSONSerializer(schema_str,schema_registry_client)
-    #json_deserializer = JSONDeserializer(schema_str)
 
     input_directory = args.input_dir
     input_files     = args.file
     key             = args.kafka_key
+    log_file        = args.log
 
     string_serializer = StringSerializer('utf_8')
 
@@ -48,7 +49,7 @@ class kafka_producer:
     producer = Producer(config) # Create producer
 
     # Write into log
-    logging.basicConfig(filename='./log/producer.log', encoding='utf-8', level=logging.DEBUG)
+    logging.basicConfig(filename=log_file, encoding='utf-8', level=logging.DEBUG)
 
     # Optional per-message delivery callback (triggered by poll() or flush())
     # when a message has been successfully delivered or permanently
@@ -66,33 +67,34 @@ class kafka_producer:
         # Check if target file and field file exists
         for file in self.input_files:
             if(not os.path.isfile(f'{self.input_directory}{file}.json')):
-                logging.error(f"Mimic target json file does not exist: {self.input_directory}{file}.json")
+                logging.error(f"Sample json file does not exist: {self.input_directory}{file}.json")
                 exit(1)
 
             if(not os.path.isfile(f'{self.input_directory}{file}.json')):
-                logging.error(f"Filed value json file does not exist: {self.input_directory}{file}_field.json\n * File name needs to be {file}_field.json")
+                logging.error(f"Sample json file does not exist: {self.input_directory}{file}_field.json")
                 exit(1)
 
 
         # Read json target file
-        json_file = []
         try:
             for target in self.input_files:
                 file = open(f'{self.input_directory}{target}.json')
                 data = json.load(file)
                 file.close
-
                 for values in data.values():
-                    for value in values:
+                    for record in values:
+                        topic = record.get("topic")
+                        value = record.get("value")
                         str_value = json.dumps(value)
                         serialized_key  = self.string_serializer(self.key)
-                        #serialized_value  = self.string_serializer(value,SerializationContext(self.topic, MessageField.VALUE))
                         serialized_value = self.string_serializer(str_value)
-                        self.producer.produce(target, key = serialized_key, value = serialized_value, callback = self.delivery_callback)
-
+                        self.producer.produce(topic, key = serialized_key, value = serialized_value, callback = self.delivery_callback)
+                
                 # Block until the messages are sent.
                 self.producer.poll(10000)
                 self.producer.flush()
+
+
         except Exception as err:    
             logging.error(f'Something is wrong during opening JSON file: {err}')
 
