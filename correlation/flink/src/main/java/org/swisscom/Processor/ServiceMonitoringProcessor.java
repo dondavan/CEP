@@ -1,18 +1,15 @@
 package org.swisscom.Processor;
 
-import org.apache.flink.formats.json.JsonDeserializationSchema;
 import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.swisscom.POJOs.ServiceMonitoringOutput_POJO;
-import org.swisscom.POJOs.Zabbix_events_POJO;
+import org.swisscom.POJOs.ZabbixEvents_POJO;
 
-import java.lang.reflect.InvocationTargetException;
-
-public class ServiceMonitoringProcessor extends ProcessFunction<Zabbix_events_POJO,ServiceMonitoringOutput_POJO> {
+public class ServiceMonitoringProcessor extends ProcessFunction<ZabbixEvents_POJO,ServiceMonitoringOutput_POJO> {
 
 
     @Override
-    public void processElement(Zabbix_events_POJO zabbixEvent, ProcessFunction<Zabbix_events_POJO, ServiceMonitoringOutput_POJO>.Context context, Collector<ServiceMonitoringOutput_POJO> collector) throws Exception {
+    public void processElement(ZabbixEvents_POJO zabbixEvent, ProcessFunction<ZabbixEvents_POJO, ServiceMonitoringOutput_POJO>.Context context, Collector<ServiceMonitoringOutput_POJO> collector) throws Exception {
 
         /* Event trigger through String matching*/
         if (Event_trigger(zabbixEvent.trigger_name,zabbixEvent.event_tags.get("VNF-Type"))){

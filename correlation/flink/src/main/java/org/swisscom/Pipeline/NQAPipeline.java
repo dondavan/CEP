@@ -12,16 +12,11 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.swisscom.POJOs.Aggregation_Alert_POJO;
-import org.swisscom.POJOs.TCI_POJO;
-import org.swisscom.POJOs.Zabbix_events_POJO;
+import org.swisscom.POJOs.AggregationAlert_POJO;
 import org.swisscom.POJOs.nqa_raw_POJO;
 import org.swisscom.Processor.*;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Properties;
 
 public class NQAPipeline {
@@ -50,9 +45,11 @@ public class NQAPipeline {
          Serialization Configuration
 
          *****************************************************************************************/
-        /* Json Deserializer and Serializer for Data from Kafka Topic */
-        JsonDeserializationSchema<nqa_raw_POJO> jsonFormatDe=new JsonDeserializationSchema<>(nqa_raw_POJO.class);
-        JsonSerializationSchema<Aggregation_Alert_POJO> Aggregation_Alert_JsonFormatSe=new JsonSerializationSchema<>();
+        /* Json Deserializer for data from Kafka Topic */
+        JsonDeserializationSchema<nqa_raw_POJO> NQA_JsonFormatDe=new JsonDeserializationSchema<>(nqa_raw_POJO.class);
+
+        /* Serializer for sending data to sink topic */
+        JsonSerializationSchema<AggregationAlert_POJO> Aggregation_Alert_JsonFormatSe=new JsonSerializationSchema<>();
 
 
         /*****************************************************************************************
@@ -60,7 +57,7 @@ public class NQAPipeline {
          Sink Configuration
 
          *****************************************************************************************/
-        KafkaSink<Aggregation_Alert_POJO> NoConnectionCPE_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
+        KafkaSink<AggregationAlert_POJO> NoConnectionCPE_Sink = KafkaSink.<AggregationAlert_POJO>builder()
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic("aggregation-alerts")
@@ -70,7 +67,7 @@ public class NQAPipeline {
                 .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .build();
 
-        KafkaSink<Aggregation_Alert_POJO> NoConnectionFOS_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
+        KafkaSink<AggregationAlert_POJO> NoConnectionFOS_Sink = KafkaSink.<AggregationAlert_POJO>builder()
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic("aggregation-alerts")
@@ -95,21 +92,22 @@ public class NQAPipeline {
 
                 /* Consumer behavior */
                 .setStartingOffsets(OffsetsInitializer.latest())
-                .setValueOnlyDeserializer(jsonFormatDe)
+                .setValueOnlyDeserializer(NQA_JsonFormatDe)
                 .build();
 
         /* Get a data stream from environment through added Kafka Source*/
-        DataStream<nqa_raw_POJO> kafkaStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)), source_topic+"_stream");
+        DataStream<nqa_raw_POJO> NoCPEStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(10)), "NoCPE_stream");
+        DataStream<nqa_raw_POJO> NoFOSStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(10)), "NoFOS_stream");
 
         /* Site to Site Failure Aggregation Stream Processing */
-        DataStream<Aggregation_Alert_POJO> NoConnectionCPE_Stream = kafkaStream
+        DataStream<AggregationAlert_POJO> NoConnectionCPE_Stream = NoCPEStream
                 .keyBy(value -> value.metrictype)
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
                 .trigger(new NoConnectionCPETrigger())
                 .process(new NoConnectionCPEProcessor());
 
         /* Site to Site Failure Aggregation Stream Processing */
-        DataStream<Aggregation_Alert_POJO> NoConnectionFOS_Stream = kafkaStream
+        DataStream<AggregationAlert_POJO> NoConnectionFOS_Stream = NoFOSStream
                 .keyBy(value -> value.metrictype)
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
                 .trigger(new NoConnectionFOSTrigger())

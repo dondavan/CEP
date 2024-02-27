@@ -6,26 +6,25 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
-import org.swisscom.POJOs.Aggregation_Alert_POJO;
+import org.swisscom.POJOs.AggregationAlert_POJO;
 import org.swisscom.POJOs.nqa_raw_POJO;
-import org.swisscom.States.NoConnectionCPEState;
 import org.swisscom.States.NoConnectionFOSState;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-public class NoConnectionFOSProcessor extends ProcessWindowFunction<nqa_raw_POJO, Aggregation_Alert_POJO, String, TimeWindow> {
+public class NoConnectionFOSProcessor extends ProcessWindowFunction<nqa_raw_POJO, AggregationAlert_POJO, String, TimeWindow> {
 
     /* Count the occurrence of type of event*/
     private ValueState<NoConnectionFOSState> countState;
 
     @Override
     public void open(Configuration parameters) throws Exception {
-        countState = getRuntimeContext().getState(new ValueStateDescriptor<>("NoConnectionFOSState", NoConnectionFOSState.class));
+        countState = getRuntimeContext().getState(new ValueStateDescriptor<>("NoConnectionFOSEventValueState", NoConnectionFOSState.class));
     }
 
     @Override
-    public void process(String s, ProcessWindowFunction<nqa_raw_POJO, Aggregation_Alert_POJO, String, TimeWindow>.Context context, Iterable<nqa_raw_POJO> iterable, Collector<Aggregation_Alert_POJO> collector) throws Exception {
+    public void process(String s, ProcessWindowFunction<nqa_raw_POJO, AggregationAlert_POJO, String, TimeWindow>.Context context, Iterable<nqa_raw_POJO> iterable, Collector<AggregationAlert_POJO> collector) throws Exception {
 
         /* Retrieve the current state */
         NoConnectionFOSState current = this.countState.value();
@@ -33,7 +32,7 @@ public class NoConnectionFOSProcessor extends ProcessWindowFunction<nqa_raw_POJO
             current = new NoConnectionFOSState();
         }
 
-        Aggregation_Alert_POJO aggregationAlertPojo = new Aggregation_Alert_POJO();
+        AggregationAlert_POJO aggregationAlertPojo = new AggregationAlert_POJO();
 
         /* Parse timestamp */
         Instant windowStart = Instant.ofEpochMilli(context.window().getStart());

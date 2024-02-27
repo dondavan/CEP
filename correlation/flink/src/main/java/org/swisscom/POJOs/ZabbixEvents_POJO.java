@@ -1,9 +1,8 @@
 package org.swisscom.POJOs;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
-public class Zabbix_events_POJO {
+public class ZabbixEvents_POJO {
     public String event_url;
     public String zabbix_environment;
     public String zabbix_site;
@@ -26,5 +25,5 @@ public class Zabbix_events_POJO {
     public String event_recovery_datetime;
     public String action_datetime;
 
-    public Zabbix_events_POJO(){}
+    public ZabbixEvents_POJO(){}
 }

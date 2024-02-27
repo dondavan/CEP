@@ -5,25 +5,34 @@ import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.triggers.TriggerResult;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.swisscom.POJOs.Zabbix_events_POJO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.swisscom.POJOs.ZabbixEvents_POJO;
 import org.swisscom.States.SitetoSiteFailureState;
+import org.swisscom.States.TriggerState;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
 
-public class SitetoSiteFailureTrigger extends Trigger<Zabbix_events_POJO, TimeWindow> {
+public class SitetoSiteFailureTrigger extends Trigger<ZabbixEvents_POJO, TimeWindow> {
+    private final static Logger logger = LoggerFactory.getLogger("SitetoSiteFailureTrigger");
     @Override
     /* Called each time when an element that is added to a window. */
-    public TriggerResult onElement(Zabbix_events_POJO zabbixEventsPojo, long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
-        ValueState<SitetoSiteFailureState> countState = triggerContext.getPartitionedState(new ValueStateDescriptor<>("SiteToSiteState", SitetoSiteFailureState.class));
-        SitetoSiteFailureState current = countState.value();
-        if (current == null) {
-            current = new SitetoSiteFailureState();
-        }
+    public TriggerResult onElement(ZabbixEvents_POJO zabbixEventsPojo, long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
+        ValueState<SitetoSiteFailureState> eventValueState  = triggerContext.getPartitionedState(new ValueStateDescriptor<>("SiteToSiteEventValueState", SitetoSiteFailureState.class));
+        ValueState<TriggerState>         triggerValueState  = triggerContext.getPartitionedState(new ValueStateDescriptor<>("SiteToSiteTriggerValueState", TriggerState.class));
+
+        SitetoSiteFailureState eventState   = eventValueState.value();
+        TriggerState         triggerState   =  triggerValueState.value();
+
+        if(eventState == null)     eventState = new SitetoSiteFailureState();
+        if(triggerState == null) triggerState   = new TriggerState();
 
         Instant instant = Instant.parse( zabbixEventsPojo.action_datetime );
         boolean fire = false;
+
+        //logger.debug("Processing Event: {\"zabbix_action\":\""+zabbixEventsPojo.zabbix_action  +"\", \"action_datetime\":\""+zabbixEventsPojo.action_datetime+"\", ...}");
 
         /*
         1.Check for alerts that are closed within the timeframe,and consider filtering them out. The alert is a non-issue,
@@ -36,11 +45,15 @@ public class SitetoSiteFailureTrigger extends Trigger<Zabbix_events_POJO, TimeWi
                 zabbixEventsPojo.trigger_name.matches(".*S2S.*") &&
                 instant.isAfter(Instant.now().minus(24 , ChronoUnit.HOURS)))
         {
-            current.count++;
-            if(Event_trigger(current.count)) fire = true;
+            eventState.count++;
+            triggerState.count++;
+            if(Event_trigger(eventState.count,triggerState.count)) fire = true;
         }
 
-        countState.update(current); // write the state back
+        /* Write the state back */
+        eventValueState.update(eventState);
+        triggerValueState.update(triggerState);
+
         if(fire)return TriggerResult.FIRE_AND_PURGE;
         return TriggerResult.CONTINUE;
     }
@@ -50,6 +63,9 @@ public class SitetoSiteFailureTrigger extends Trigger<Zabbix_events_POJO, TimeWi
     *   Processing time refers to the system time of the machine that is executing the respective operation.
     *  */
     public TriggerResult onProcessingTime(long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
+        Instant windowStart = Instant.ofEpochMilli(timeWindow.getStart());
+        Instant windowEnd = Instant.ofEpochMilli(timeWindow.getEnd());
+        //logger.debug("Processing Window between "+windowStart.toString()+"-" +windowEnd.toString()+ " is closed.");
         return TriggerResult.CONTINUE;
     }
 
@@ -66,11 +82,10 @@ public class SitetoSiteFailureTrigger extends Trigger<Zabbix_events_POJO, TimeWi
 
     }
 
-    private boolean Event_trigger(long count){
+    private boolean Event_trigger(long eventCount,long triggerCount){
 
         /* Policy to be decided */
-
-        return count>=5;
+        return eventCount>=5 && triggerCount==5;
 
     }
 }

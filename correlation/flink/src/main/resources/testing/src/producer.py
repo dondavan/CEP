@@ -2,6 +2,7 @@ import os.path
 import json
 from argparse import ArgumentParser, FileType
 from uuid import uuid4
+from time import sleep
 import logging
 
 from configparser import ConfigParser
@@ -89,6 +90,7 @@ class kafka_producer:
                         serialized_key  = self.string_serializer(self.key)
                         serialized_value = self.string_serializer(str_value)
                         self.producer.produce(topic, key = serialized_key, value = serialized_value, callback = self.delivery_callback)
+                        sleep(1)
                 
                 # Block until the messages are sent.
                 self.producer.poll(10000)

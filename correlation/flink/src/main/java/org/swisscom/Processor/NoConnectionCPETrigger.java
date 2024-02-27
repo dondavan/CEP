@@ -5,10 +5,9 @@ import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.triggers.TriggerResult;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
-import org.swisscom.POJOs.Zabbix_events_POJO;
 import org.swisscom.POJOs.nqa_raw_POJO;
 import org.swisscom.States.NoConnectionCPEState;
-import org.swisscom.States.SitetoSiteFailureState;
+import org.swisscom.States.TriggerState;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -20,11 +19,14 @@ public class NoConnectionCPETrigger extends Trigger<nqa_raw_POJO, TimeWindow> {
     public TriggerResult onElement(nqa_raw_POJO nqaRawPojo, long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
 
         /* Get event counting from Flink state */
-        ValueState<NoConnectionCPEState> countState = triggerContext.getPartitionedState(new ValueStateDescriptor<>("NoConnectionCPEState", NoConnectionCPEState.class));
-        NoConnectionCPEState current = countState.value();
-        if (current == null) {
-            current = new NoConnectionCPEState();
-        }
+        ValueState<NoConnectionCPEState> eventValueState = triggerContext.getPartitionedState(new ValueStateDescriptor<>("NoConnectionCPEEventValueState", NoConnectionCPEState.class));
+        ValueState<TriggerState>       triggerValueState = triggerContext.getPartitionedState(new ValueStateDescriptor<>("NoConnectionCPETriggerValueState", TriggerState.class));
+
+        NoConnectionCPEState eventState = eventValueState.value();
+        TriggerState       triggerState = triggerValueState.value();
+
+        if(eventState == null)     eventState  = new NoConnectionCPEState();
+        if(triggerState == null) triggerState  = new TriggerState();
 
         Instant instant = Instant.ofEpochMilli( nqaRawPojo.timestamp );
         boolean fire = false;
@@ -34,11 +36,15 @@ public class NoConnectionCPETrigger extends Trigger<nqa_raw_POJO, TimeWindow> {
                 nqaRawPojo.value == 0 &&
                 instant.isAfter(Instant.now().minus(24 , ChronoUnit.HOURS)))
         {
-            current.count++;
-            if(Event_trigger(current.count)) fire = true;
+            eventState.count++;
+            triggerState.count++;
+            if(Event_trigger(eventState.count,triggerState.count)) fire = true;
         }
 
-        countState.update(current); // write the state back
+        /* write the state back */
+        eventValueState.update(eventState);
+        triggerValueState.update(triggerState);
+
         if(fire)return TriggerResult.FIRE_AND_PURGE;
         return TriggerResult.CONTINUE;
     }
@@ -64,10 +70,10 @@ public class NoConnectionCPETrigger extends Trigger<nqa_raw_POJO, TimeWindow> {
 
     }
 
-    private boolean Event_trigger(long count){
+    private boolean Event_trigger(long eventCount,long triggerCount){
 
         /* Policy to be decided */
-        return count>5;
+        return eventCount>=5 && triggerCount==5;
 
     }
 }

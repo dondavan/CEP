@@ -8,6 +8,8 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.swisscom.POJOs.nqa_raw_POJO;
 import org.swisscom.States.NoConnectionCPEState;
 import org.swisscom.States.NoConnectionFOSState;
+import org.swisscom.States.NoConnectionInternetState;
+import org.swisscom.States.TriggerState;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -18,11 +20,14 @@ public class NoConnectionFOSTrigger extends Trigger<nqa_raw_POJO, TimeWindow> {
     public TriggerResult onElement(nqa_raw_POJO nqaRawPojo, long l, TimeWindow timeWindow, TriggerContext triggerContext) throws Exception {
 
         /* Get event counting from Flink state */
-        ValueState<NoConnectionFOSState> countState = triggerContext.getPartitionedState(new ValueStateDescriptor<>("NoConnectionFOSState", NoConnectionFOSState.class));
-        NoConnectionFOSState current = countState.value();
-        if (current == null) {
-            current = new NoConnectionFOSState();
-        }
+        ValueState<NoConnectionFOSState> eventValueState    = triggerContext.getPartitionedState(new ValueStateDescriptor<>("NoConnectionFOSEventValueState", NoConnectionFOSState.class));
+        ValueState<TriggerState>       triggerValueState    = triggerContext.getPartitionedState(new ValueStateDescriptor<>("NoConnectionFOSTriggerValueState", TriggerState.class));
+
+        NoConnectionFOSState  eventState    = eventValueState.value();
+        TriggerState        triggerState    =  triggerValueState.value();
+
+        if(eventState == null)     eventState  = new NoConnectionFOSState();
+        if(triggerState == null) triggerState  = new TriggerState();
 
         Instant instant = Instant.ofEpochMilli( nqaRawPojo.timestamp );
         boolean fire = false;
@@ -32,11 +37,15 @@ public class NoConnectionFOSTrigger extends Trigger<nqa_raw_POJO, TimeWindow> {
                 nqaRawPojo.value == 0 &&
                 instant.isAfter(Instant.now().minus(24 , ChronoUnit.HOURS)))
         {
-            current.count++;
-            if(Event_trigger(current.count)) fire = true;
+            eventState.count++;
+            triggerState.count++;
+            if(Event_trigger(eventState.count,triggerState.count)) fire = true;
         }
 
-        countState.update(current); // write the state back
+        /* Write the state back */
+        eventValueState.update(eventState);
+        triggerValueState.update(triggerState);
+
         if(fire)return TriggerResult.FIRE_AND_PURGE;
         return TriggerResult.CONTINUE;
     }
@@ -62,10 +71,10 @@ public class NoConnectionFOSTrigger extends Trigger<nqa_raw_POJO, TimeWindow> {
 
     }
 
-    private boolean Event_trigger(long count){
+    private boolean Event_trigger(long eventCount,long triggerCount){
 
         /* Policy to be decided */
-        return count>5;
+        return eventCount>=5 && triggerCount==5;
 
     }
 }

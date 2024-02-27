@@ -13,14 +13,11 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingProcessingTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.swisscom.POJOs.ServiceMonitoringOutput_POJO;
-import org.swisscom.POJOs.Aggregation_Alert_POJO;
-import org.swisscom.POJOs.Zabbix_events_POJO;
+import org.swisscom.POJOs.AggregationAlert_POJO;
+import org.swisscom.POJOs.ZabbixEvents_POJO;
 import org.swisscom.Processor.*;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Properties;
 
 public class ZabbixPipeline {
@@ -49,11 +46,12 @@ public class ZabbixPipeline {
          Serialization Configuration
 
          *****************************************************************************************/
-        /* Json Deserializer and Serializer for Data from Kafka Topic */
-        JsonDeserializationSchema<Zabbix_events_POJO> jsonFormatDe=new JsonDeserializationSchema<>(Zabbix_events_POJO.class);
+        /* Json Deserializer for data from Kafka Topic */
+        JsonDeserializationSchema<ZabbixEvents_POJO> Zabbix_JsonFormatDe=new JsonDeserializationSchema<>(ZabbixEvents_POJO.class);
 
+        /* Serializer for sending data to sink topic */
         JsonSerializationSchema<ServiceMonitoringOutput_POJO> ServiceMonitoring_JsonFormatSe=new JsonSerializationSchema<>();
-        JsonSerializationSchema<Aggregation_Alert_POJO> Aggregation_Alert_JsonFormatSe=new JsonSerializationSchema<>();
+        JsonSerializationSchema<AggregationAlert_POJO> Aggregation_Alert_JsonFormatSe=new JsonSerializationSchema<>();
 
 
         /*****************************************************************************************
@@ -72,7 +70,7 @@ public class ZabbixPipeline {
                 .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .build();
 
-        KafkaSink<Aggregation_Alert_POJO> SitetoSiteFailure_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
+        KafkaSink<AggregationAlert_POJO> SitetoSiteFailure_Sink = KafkaSink.<AggregationAlert_POJO>builder()
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic("aggregation-alerts")
@@ -82,7 +80,7 @@ public class ZabbixPipeline {
                 .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
                 .build();
 
-        KafkaSink<Aggregation_Alert_POJO> NoConnectionInternet_Sink = KafkaSink.<Aggregation_Alert_POJO>builder()
+        KafkaSink<AggregationAlert_POJO> NoConnectionInternet_Sink = KafkaSink.<AggregationAlert_POJO>builder()
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic("aggregation-alerts")
@@ -99,7 +97,7 @@ public class ZabbixPipeline {
 
          *****************************************************************************************/
         /* Instantiate a KafkaSource Instance using builder class */
-        KafkaSource<Zabbix_events_POJO> kafkaSource = KafkaSource.<Zabbix_events_POJO>builder()
+        KafkaSource<ZabbixEvents_POJO> kafkaSource = KafkaSource.<ZabbixEvents_POJO>builder()
 
                 /* Server Topic GroupID */
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
@@ -108,30 +106,34 @@ public class ZabbixPipeline {
 
                 /* Consumer behavior */
                 .setStartingOffsets(OffsetsInitializer.latest())
-                .setValueOnlyDeserializer(jsonFormatDe)
+                .setValueOnlyDeserializer(Zabbix_JsonFormatDe)
                 .build();
 
         /* Get a data stream from environment through added Kafka Source*/
-        DataStream<Zabbix_events_POJO> kafkaStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)), source_topic+"_stream");
+        DataStream<ZabbixEvents_POJO> ServiceMonitoringStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(10)), "ServiceMonitoring_stream");
+        DataStream<ZabbixEvents_POJO> S2SStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(10)), "S2S_stream");
+        DataStream<ZabbixEvents_POJO> NoInternetStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(10)), "NoInternet_stream");
 
 
         /* Service Monitoring Stream Processing */
-        DataStream<ServiceMonitoringOutput_POJO> ServiceMonitoring_Stream =  kafkaStream.process(new ServiceMonitoringProcessor()).startNewChain();
-        ServiceMonitoring_Stream.sinkTo(ServiceMonitoring_Sink);
+        DataStream<ServiceMonitoringOutput_POJO> ServiceMonitoring_Stream =  ServiceMonitoringStream.process(new ServiceMonitoringProcessor());
 
         /* Site to Site Failure Aggregation Stream Processing */
-        DataStream<Aggregation_Alert_POJO> SitetoSiteFailure_Stream =   kafkaStream
+        DataStream<AggregationAlert_POJO> SitetoSiteFailure_Stream =   S2SStream
                 .keyBy(value -> value.zabbix_environment)
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
                 .trigger(new SitetoSiteFailureTrigger())
                 .process(new SitetoSiteFailureProcessor());
+
         /* No Connection Internet Aggregation Stream Processing */
-        DataStream<Aggregation_Alert_POJO>  NoConnectionInternet_Stream =   kafkaStream
+        DataStream<AggregationAlert_POJO>  NoConnectionInternet_Stream =   NoInternetStream
                 .keyBy(value -> value.zabbix_environment)
                 .window(TumblingProcessingTimeWindows.of(Time.seconds(300)))
                 .trigger(new NoConnectionInternetTrigger())
                 .process(new NoConnectionInternetProcessor());
 
+
+        ServiceMonitoring_Stream.sinkTo(ServiceMonitoring_Sink);
         SitetoSiteFailure_Stream.sinkTo(SitetoSiteFailure_Sink);
         NoConnectionInternet_Stream.sinkTo(NoConnectionInternet_Sink);
 

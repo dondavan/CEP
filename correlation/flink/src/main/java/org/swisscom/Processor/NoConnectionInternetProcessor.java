@@ -6,25 +6,25 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
-import org.swisscom.POJOs.Aggregation_Alert_POJO;
-import org.swisscom.POJOs.Zabbix_events_POJO;
+import org.swisscom.POJOs.AggregationAlert_POJO;
+import org.swisscom.POJOs.ZabbixEvents_POJO;
 import org.swisscom.States.NoConnectionInternetState;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-public class NoConnectionInternetProcessor extends ProcessWindowFunction<Zabbix_events_POJO, Aggregation_Alert_POJO, String, TimeWindow> {
+public class NoConnectionInternetProcessor extends ProcessWindowFunction<ZabbixEvents_POJO, AggregationAlert_POJO, String, TimeWindow> {
 
     /* Count the occurrence of type of event*/
     private ValueState<NoConnectionInternetState> countState;
 
     @Override
     public void open(Configuration parameters) throws Exception {
-        countState = getRuntimeContext().getState(new ValueStateDescriptor<>("NoConnectionInternetState", NoConnectionInternetState.class));
+        countState = getRuntimeContext().getState(new ValueStateDescriptor<>("NoConnectionInternetEventValueState", NoConnectionInternetState.class));
     }
 
     @Override
-    public void process(String s, ProcessWindowFunction<Zabbix_events_POJO, Aggregation_Alert_POJO, String, TimeWindow>.Context context, Iterable<Zabbix_events_POJO> iterable, Collector<Aggregation_Alert_POJO> collector) throws Exception {
+    public void process(String s, ProcessWindowFunction<ZabbixEvents_POJO, AggregationAlert_POJO, String, TimeWindow>.Context context, Iterable<ZabbixEvents_POJO> iterable, Collector<AggregationAlert_POJO> collector) throws Exception {
 
         /* Retrieve the current state */
         NoConnectionInternetState current = this.countState.value();
@@ -32,7 +32,7 @@ public class NoConnectionInternetProcessor extends ProcessWindowFunction<Zabbix_
             current = new NoConnectionInternetState();
         }
 
-        Aggregation_Alert_POJO aggregationAlertPojo = new Aggregation_Alert_POJO();
+        AggregationAlert_POJO aggregationAlertPojo = new AggregationAlert_POJO();
 
         /* Parse timestamp */
         Instant windowStart = Instant.ofEpochMilli(context.window().getStart());

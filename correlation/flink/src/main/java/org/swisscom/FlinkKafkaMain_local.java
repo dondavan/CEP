@@ -2,6 +2,8 @@ package org.swisscom;
 
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.swisscom.Pipeline.NQAPipeline;
 import org.swisscom.Pipeline.ZabbixPipeline;
 import org.swisscom.Pipeline.ZabbixTCIJointPipeline;

@@ -10,13 +10,15 @@ import org.apache.flink.formats.json.JsonDeserializationSchema;
 import org.apache.flink.formats.json.JsonSerializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.swisscom.POJOs.FilteredEvent_POJO;
+import org.swisscom.POJOs.ServiceMonitoringOutput_POJO;
 import org.swisscom.POJOs.TCI_POJO;
+import org.swisscom.POJOs.ZabbixEvents_POJO;
+import org.swisscom.Processor.FilteringZabbixPreProcessor;
+import org.swisscom.Processor.ServiceMonitoringProcessor;
 import org.swisscom.Processor.StreamFilteringProcessor;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Properties;
 
 public class ZabbixTCIJointPipeline {
@@ -28,7 +30,7 @@ public class ZabbixTCIJointPipeline {
     String groupID = "Test-group";
 
     /* List of topic subscribed to  */
-    private final String source_topic = "tci_zabbix_events";
+    private final String source_topic = "TCI";
 
     public ZabbixTCIJointPipeline(Properties pros, String groupID, StreamExecutionEnvironment env){
         this.pros = pros;
@@ -45,8 +47,12 @@ public class ZabbixTCIJointPipeline {
          Serialization Configuration
 
          *****************************************************************************************/
-        JsonDeserializationSchema<TCI_POJO> jsonFormatDe=new JsonDeserializationSchema<>(TCI_POJO.class);
-        JsonSerializationSchema<TCI_POJO> jsonFormatSe=new JsonSerializationSchema<>();
+        /* Json Deserializer for data from Kafka Topic */
+        JsonDeserializationSchema<ZabbixEvents_POJO> Zabbix_JsonFormatDe=new JsonDeserializationSchema<>(ZabbixEvents_POJO.class);
+        JsonDeserializationSchema<TCI_POJO> TCI_JsonFormatDe=new JsonDeserializationSchema<>(TCI_POJO.class);
+
+        /* Serializer for sending data to sink topic */
+        JsonSerializationSchema<FilteredEvent_POJO> FilteredEvent_JsonFormatSe=new JsonSerializationSchema<>();
 
 
         /*****************************************************************************************
@@ -55,12 +61,12 @@ public class ZabbixTCIJointPipeline {
 
          *****************************************************************************************/
         /* Instantiate a sink for stream processing output*/
-        KafkaSink<TCI_POJO> sink = KafkaSink.<TCI_POJO>builder()
+        KafkaSink<FilteredEvent_POJO> FilteredEvent_sink = KafkaSink.<FilteredEvent_POJO>builder()
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
 
                 .setRecordSerializer(KafkaRecordSerializationSchema.builder()
                         .setTopic("FILTERED_EVENT_TOPIC")
-                        .setValueSerializationSchema(jsonFormatSe)
+                        .setValueSerializationSchema(FilteredEvent_JsonFormatSe)
                         .build()
                 )
                 .setDeliveryGuarantee(DeliveryGuarantee.AT_LEAST_ONCE)
@@ -73,24 +79,39 @@ public class ZabbixTCIJointPipeline {
 
          *****************************************************************************************/
         /* Instantiate a KafkaSource Instance using builder class */
-        KafkaSource<TCI_POJO> kafkaSource = KafkaSource.<TCI_POJO >builder()
+        KafkaSource<TCI_POJO> TCISource = KafkaSource.<TCI_POJO >builder()
 
                 /* Server Topic GroupID */
                 .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
-                .setTopics(source_topic)
+                .setTopics("TCI")
                 .setGroupId(this.groupID)
 
                 /* Consumer behavior */
                 .setStartingOffsets(OffsetsInitializer.latest())
-                .setValueOnlyDeserializer(jsonFormatDe)
+                .setValueOnlyDeserializer(TCI_JsonFormatDe)
+                .build();
+
+        KafkaSource<ZabbixEvents_POJO> ZabbixSource = KafkaSource.<ZabbixEvents_POJO>builder()
+
+                /* Server Topic GroupID */
+                .setBootstrapServers(this.pros.getProperty("bootstrap.servers"))
+                .setTopics("zabbix_events")
+                .setGroupId(this.groupID)
+
+                /* Consumer behavior */
+                .setStartingOffsets(OffsetsInitializer.latest())
+                .setValueOnlyDeserializer(Zabbix_JsonFormatDe)
                 .build();
 
         /* Get a data stream from environment through added Kafka Source*/
-        DataStream<TCI_POJO> kafkaStream = env.fromSource(kafkaSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(20)), source_topic+"_stream");
+        DataStream<TCI_POJO> FilteringTCIStream = env.fromSource(TCISource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(10)), "FilteringTCI_stream");
+        DataStream<ZabbixEvents_POJO> FilteringZabbixStream = env.fromSource(ZabbixSource, WatermarkStrategy.forBoundedOutOfOrderness(Duration.ofSeconds(10)), "FilteringZabbix_stream");
+
+        DataStream<FilteredEvent_POJO> ServiceMonitoring_Stream =  FilteringZabbixStream.process(new FilteringZabbixPreProcessor());
+
 
         /* Transformation on data stream*/
-        kafkaStream.process(new StreamFilteringProcessor());
-        kafkaStream.sinkTo(sink);
+        ServiceMonitoring_Stream.sinkTo(FilteredEvent_sink);
 
     }
 
